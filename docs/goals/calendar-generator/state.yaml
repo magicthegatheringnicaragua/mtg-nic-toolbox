@@ -8,7 +8,7 @@ goal:
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
   tranche: "Ship a working first vertical slice of the calendar-generator app: month/day format picker, custom-event path, correct week-grid math, canvas-composed poster image matching the reference layout, and PNG export."
-  status: active # active | blocked | done
+  status: done # active | blocked | done
   oracle:
     signal: "Generate the October 2026 calendar in the app, assign formats/custom events per notes/reference-calendar-layout.png, download the PNG, and visually confirm it reproduces that reference's structure (title bar + Nicaragua flag, VIERNES/SABADO/DOMINGO columns, correct per-day images/labels, correct week-grid math including adjacent-month spillover days)."
     cadence: "after each Worker package and at final audit"
@@ -65,7 +65,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/calendar-generator/"
     command: "node <skill-path>/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/calendar-generator"
 
-active_task: T999
+active_task: null
 
 tasks:
   - id: T001
@@ -306,7 +306,7 @@ tasks:
   - id: T999
     type: judge
     assignee: Judge
-    status: active
+    status: done
     reasoning_hint: high
     objective: "Audit whether the implemented slice satisfies the Goal Oracle: date-grid unit test passes for October 2026, and a visual demo/comparison against notes/reference-calendar-layout.png confirms layout fidelity (title bar, flag, columns, per-day images/labels, spillover days, custom-event path)."
     inputs:
@@ -324,8 +324,23 @@ tasks:
       - "full_outcome_complete: true | false"
       - "missing evidence"
       - "next task if not complete"
-    receipt: null
-
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Personally ran node --test apps/calendar-generator/src/grid.test.mjs: 6/6 pass incl. exact Oct 2026 date-grid + spillover. Personally viewed both reference-calendar-layout.png and the real-Chromium-exported exported-calendar.png: title+flag, VIERNES/SABADO/DOMINGO columns, identical 5-row date grid, blank Sabado fillers, Nov1 spillover with Proximamente, and custom label 'Store Championship (Pauper)' on Oct18 all match structurally. Only placeholder-art/flag differences, explicitly deferred per goal.md. git log/status show the full slice committed on main (bae9206), tree clean, nothing queued/active besides this audit."
+      evidence:
+        - "node --test apps/calendar-generator/src/grid.test.mjs run by Judge: 6/6 pass"
+        - "docs/goals/calendar-generator/notes/reference-calendar-layout.png viewed by Judge via Read"
+        - "exported-calendar.png (real headless-Chromium export) viewed by Judge via Read"
+        - "git log --oneline: bae9206 Implement calendar-generator first vertical slice; git status: working tree clean"
+        - "git show --stat bae9206 confirms all apps/calendar-generator/* files from T003 allowed_files are committed"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Set T999 status=done with this receipt and full_outcome_complete=true."
+        - "Set goal.status=done in state.yaml."
+        - "Non-blocking note: local commit bae9206 is 1 commit ahead of origin/main (not yet pushed); push is out of this tranche's scope, flagged for operator awareness."
 checks:
   dirty_fingerprint: unknown
   last_verification:
