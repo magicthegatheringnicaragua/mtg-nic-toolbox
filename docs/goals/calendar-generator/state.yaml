@@ -1,0 +1,170 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "Calendar Generator (mtg-nic-toolbox)"
+  slug: "calendar-generator"
+  kind: specific # specific | open_ended | existing_plan | recovery | audit
+  tranche: "Ship a working first vertical slice of the calendar-generator app: month/day format picker, custom-event path, correct week-grid math, canvas-composed poster image matching the reference layout, and PNG export."
+  status: active # active | blocked | done
+  oracle:
+    signal: "Generate the October 2026 calendar in the app, assign formats/custom events per notes/reference-calendar-layout.png, download the PNG, and visually confirm it reproduces that reference's structure (title bar + Nicaragua flag, VIERNES/SABADO/DOMINGO columns, correct per-day images/labels, correct week-grid math including adjacent-month spillover days)."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Unit test covering October 2026's exact date-grid placement (2,4,9,11,16,18,23,24,25,30 + Nov 1 spillover) PASSES, and a visual demo/comparison against the reference image is recorded in the final audit receipt."
+  intake:
+    original_request: "Build the first app of mtg-nic-toolbox: a tool for the MTG community in Nicaragua to generate monthly event calendars matching a reference poster layout, selecting a format (or custom event) per Fri/Sat/Sun day, each with its own repo-hosted image, plus a generic image for custom events."
+    interpreted_outcome: "A static client-side web app, scaffolded as apps/calendar-generator/ in a monorepo, that lets the organizer pick a month, assign a format/custom label+image to each weekend day, and export a PNG poster matching the reference calendar layout."
+    input_shape: specific
+    audience: "Magic: The Gathering community (organizers/players) in Nicaragua"
+    authority: requested
+    proof_type: demo
+    completion_proof: "Downloadable PNG for October 2026 visually matches docs/goals/calendar-generator/notes/reference-calendar-layout.png in structure, and the date-grid unit test passes."
+    likely_misfire: "Building a generic 7-day calendar grid instead of the Fri/Sat/Sun-only poster structure, missing adjacent-month spillover days, missing the custom-event image path, or introducing a backend/framework beyond what this simple static tool needs."
+    blind_spots_considered:
+      - "Week rows are grouped by Fri/Sat/Sun only; a row can show a date from the adjacent month (e.g. Nov 1 appears in Oct 2026's last row)."
+      - "Unset days render filler/background art, not blank/hidden cells."
+      - "Catalog is one flat list (formats and event-types mixed, e.g. 'Store Championship'); per-day label text defaults to the selected entry's name but is freely editable so combined labels like 'Store Championship (Pauper)' are possible."
+      - "Output resolution should be reasonable for social media sharing, matching the reference image's rough aspect ratio."
+    existing_plan_facts: []
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  exact_human_approval_can_terminal_wait: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  # installed | bundled_not_installed | missing | unknown
+  # missing and bundled_not_installed use PM fallback; unknown requires one exact-role attempt before fallback.
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  # none | local | unknown
+  selected: local
+  local:
+    status: live # not_requested | starting | live | generated | blocked
+    url: "http://goalbuddy.localhost:41737/calendar-generator/"
+    command: "node <skill-path>/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/calendar-generator"
+
+active_task: T001
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: active
+    reasoning_hint: low
+    objective: "Confirm the repo is empty of conflicting conventions, survey feasible client-side approaches for composing the poster image (Canvas API vs SVG, no backend/build step), and work out the exact week-grid algorithm needed to reproduce notes/reference-calendar-layout.png (rows = weeks restricted to Fri/Sat/Sun columns, adjacent-month spillover days, e.g. Nov 1 in Oct 2026's last row)."
+    inputs:
+      - "docs/goals/calendar-generator/goal.md"
+      - "docs/goals/calendar-generator/notes/reference-calendar-layout.png"
+      - "repo root (currently empty)"
+    constraints:
+      - "Read-only."
+      - "Do not edit implementation files."
+      - "Prefer concrete file-path evidence and a worked date-grid algorithm (with the Oct 2026 example traced through it) over generic advice."
+    expected_output:
+      - "Recommended composition approach (Canvas/SVG) with rationale"
+      - "Worked week-grid algorithm, traced against October 2026"
+      - "Any repo-structure or tooling considerations for apps/calendar-generator/"
+      - "Candidate Worker task shape for T002/T003"
+    receipt: null
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Review Scout findings and decide the concrete architecture: monorepo layout (apps/calendar-generator/), tech stack, format/image asset convention (flat catalog of 12 entries + generic custom-event image), composition + export mechanism, and the exact week-grid algorithm. Produce the full first-slice Worker spec."
+    inputs:
+      - "T001 receipt"
+      - "docs/goals/calendar-generator/goal.md"
+    constraints:
+      - "Do not implement."
+      - "Pick the largest safe useful slice: the whole working vertical slice, not a sequence of tiny wrapper tasks, unless a concrete risk justifies splitting out the date-grid logic separately."
+      - "allowed_files must cover everything needed for a complete, demoable slice."
+    expected_output:
+      - "Decision: architecture + repo layout + composition/export approach"
+      - "Exact Worker objective"
+      - "allowed_files"
+      - "verify"
+      - "stop_if"
+      - "Blocked or deferred tasks"
+    receipt: null
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Implement the first vertical slice per Judge's T002 spec: scaffold apps/calendar-generator/, seed the format/event catalog with placeholder images (Moderno, Pauper, Duel, EDH Fun, Store Championship, Taller Novatos, Commander Party, Proximamente, Standard, Legacy, Draft, Sealed) plus a generic custom-event image, build the month/year + per-day picker UI (catalog selection or custom label, editable label text), implement the week-grid computation for any month/year (verified against October 2026), render the full poster via canvas composition matching the reference layout, and add a PNG export/download button."
+    allowed_files: []
+    verify: []
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Behavior is ambiguous."
+      - "Verification fails twice."
+    receipt: null
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: low
+    objective: "Scope this repo's GitHub credential to the dedicated magicthegatheringnicaragua account (distinct from the machine's default gh CLI account, carloscruzns, used over HTTPS) so pushes/PRs for mtg-nic-toolbox always authenticate as that account with nothing to switch. Repo already exists at github.com/magicthegatheringnicaragua/mtg-nic-toolbox.git (confirmed by user); user still needs to supply a fine-grained PAT for that account at the first push prompt (Worker cannot generate it). Set repo-local (not global) credential.helper=osxkeychain, user.name/user.email for that account, add remote origin as https://magicthegatheringnicaragua@github.com/magicthegatheringnicaragua/mtg-nic-toolbox.git, make the initial commit of docs/goals/calendar-generator/, and push. Confirmed: no existing global/system git credential.helper is configured on this machine, so the scoped-URL approach will not collide with gh CLI's carloscruzns session."
+    allowed_files:
+      - ".git/config"
+    verify:
+      - "git remote -v shows https://magicthegatheringnicaragua@github.com/magicthegatheringnicaragua/mtg-nic-toolbox.git"
+      - "git config user.name / user.email (local, not --global) are magicthegatheringnicaragua's"
+      - "git push succeeds, prompting once for the PAT that osxkeychain then stores keyed to magicthegatheringnicaragua@github.com"
+      - "gh auth status / git config --global still show carloscruzns untouched"
+    stop_if:
+      - "Need the user to generate a Personal Access Token under magicthegatheringnicaragua and enter it at the credential prompt (external action Worker cannot perform)."
+      - "A credential for magicthegatheringnicaragua@github.com already exists in Keychain and user has not confirmed whether to reuse or replace it."
+    receipt: null
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Audit whether the implemented slice satisfies the Goal Oracle: date-grid unit test passes for October 2026, and a visual demo/comparison against notes/reference-calendar-layout.png confirms layout fidelity (title bar, flag, columns, per-day images/labels, spillover days, custom-event path)."
+    inputs:
+      - "All done task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+      - "docs/goals/calendar-generator/notes/reference-calendar-layout.png"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if required Worker work is still queued or active."
+      - "Reject completion if the visual demo comparison was not actually performed, even if the unit test passes."
+      - "Reject stopping only because a slice needs owner input, credentials, production access, destructive operations, or policy decisions."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt: null
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: unknown
+    task: null
+    commands: []
