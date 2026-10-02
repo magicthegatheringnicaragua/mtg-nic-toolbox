@@ -1,0 +1,152 @@
+:root {
+  color-scheme: light;
+  --bg: #11161c;
+  --panel: #1b232c;
+  --accent: #3f8ae0;
+  --text: #f2f5f8;
+  --muted: #8ea0b3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  padding: 1.25rem 1.5rem 0.5rem;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+header .subtitle {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+}
+
+main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem 2rem;
+  align-items: flex-start;
+}
+
+.controls {
+  flex: 0 0 340px;
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.picker-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.picker-row label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  color: var(--muted);
+  gap: 0.25rem;
+  flex: 1;
+}
+
+select,
+input[type="number"],
+input[type="text"] {
+  background: #0f151b;
+  color: var(--text);
+  border: 1px solid #2c3842;
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+.status {
+  min-height: 1.1rem;
+  color: #e06c6c;
+  font-size: 0.85rem;
+}
+
+.days-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.day-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: #141b22;
+  border: 1px solid #263038;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+}
+
+.day-row-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.day-column {
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.03em;
+}
+
+.day-number {
+  font-weight: 700;
+}
+
+.spillover {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.08);
+}
+
+.preview {
+  flex: 1 1 480px;
+  display: flex;
+  justify-content: center;
+}
+
+#calendar-canvas {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  border-radius: 8px;
+  background: #000;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}

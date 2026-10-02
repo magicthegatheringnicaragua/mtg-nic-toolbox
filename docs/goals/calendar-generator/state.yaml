@@ -65,13 +65,13 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/calendar-generator/"
     command: "node <skill-path>/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/calendar-generator"
 
-active_task: T001
+active_task: T999
 
 tasks:
   - id: T001
     type: scout
     assignee: Scout
-    status: active
+    status: done
     reasoning_hint: low
     objective: "Confirm the repo is empty of conflicting conventions, survey feasible client-side approaches for composing the poster image (Canvas API vs SVG, no backend/build step), and work out the exact week-grid algorithm needed to reproduce notes/reference-calendar-layout.png (rows = weeks restricted to Fri/Sat/Sun columns, adjacent-month spillover days, e.g. Nov 1 in Oct 2026's last row)."
     inputs:
@@ -87,11 +87,39 @@ tasks:
       - "Worked week-grid algorithm, traced against October 2026"
       - "Any repo-structure or tooling considerations for apps/calendar-generator/"
       - "Candidate Worker task shape for T002/T003"
-    receipt: null
+    receipt:
+      result: done
+      summary: "Repo has no apps/, package.json, or conflicting conventions. Recommend plain Canvas 2D (not SVG) for composition: drawImage for per-day art, fillText/strokeText for outlined bold labels, canvas.toDataURL/toBlob for one-call PNG export, zero build step. Worked week-grid algorithm traced exactly against Oct 2026 (Oct1=Thursday, firstFriday=2, 5 rows, Nov1 spillover in row5 Domingo) matches reference image pixel-for-pixel in structure. Flagged one real risk: canvas may taint/throw on file:// protocol for local images - must test over a local static server."
+      evidence:
+        - "docs/goals/calendar-generator/goal.md (full charter, catalog list, constraints)"
+        - "docs/goals/calendar-generator/notes/reference-calendar-layout.png (visual structure confirmed: title+flag, VIERNES/SABADO/DOMINGO columns, 5 rows, Nov1 spillover in last Domingo cell, blank Sabado filler cells)"
+        - "docs/goals/calendar-generator/state.yaml (T002-T999 task shapes already drafted)"
+        - "repo listing: only docs/goals/... and .gitignore exist; no apps/, no package.json, no node_modules"
+      facts:
+        - "Repo root currently contains only .git, .gitignore, and docs/goals/calendar-generator/* - zero conflicting conventions."
+        - "Jan 1 2026 = Thursday; Oct 1 2026 = Thursday (273 days later, 273 mod 7 = 0)."
+        - "Algorithm: dayOfWeek(Oct1)=Thu(4 if Sun=0); firstFriday = 1 + ((5 - dayOfWeek1 + 7) % 7) = 2. rows = ceil((daysInMonth - firstFriday + 1)/7) = ceil(30/7) = 5."
+        - "For row i (0-indexed): Friday = Date(year, month, firstFriday + 7*i); Saturday = Friday+1 day; Sunday = Friday+2 days, using native Date arithmetic so month rollover is automatic (no manual overflow logic needed)."
+        - "Traced Oct 2026: row0 Fri2/Sat3/Sun4, row1 Fri9/Sat10/Sun11, row2 Fri16/Sat17/Sun18, row3 Fri23/Sat24/Sun25, row4 Fri30/Sat31/Sun=Date(2026,9,32)=Nov1 2026 (spillover) - exactly matches reference image and goal.md's required date set (2,4,9,11,16,18,23,24,25,30 + Nov1)."
+        - "Spillover only ever occurs forward (into next month) in the Domingo column because rows start at the first in-month Friday; there is no backward/leading-week spillover in this layout."
+        - "Recommend Canvas API over SVG: canvas gives drawImage for raster format-art compositing plus single-call toDataURL()/toBlob() PNG export; SVG would need an extra SVG-to-canvas rasterization step to produce a downloadable PNG, adding indirection with no benefit since no backend/build step is used either way."
+        - "Risk: if index.html is opened via file:// instead of http(s)://, canvas.toDataURL/toBlob can throw a security error for locally-loaded images in some browsers; Worker/Judge should plan to serve the app via a simple local static server (e.g. python3 -m http.server or npx serve) when testing export."
+        - "No build step needed: plain HTML/CSS/JS (or ES modules via <script type=module>) is sufficient; the date-grid unit test can run via Node's built-in node --test + assert, requiring zero devDependencies."
+        - "Catalog order/names in state.yaml T003 (Moderno, Pauper, Duel, EDH Fun, Store Championship, Taller Novatos, Commander Party, Proximamente, Standard, Legacy, Draft, Sealed) match goal.md's 12-entry list exactly - no contradiction found."
+        - "Candidate split for T002/T003: keep grid-math (pure function monthGrid(year, monthIndexZeroBased) -> 5 rows x {date, column, inTargetMonth}) isolated in its own small reviewed/tested module since it's the highest-risk logic, per goal.md's own suggested exception to 'one big slice'; everything else (catalog, UI, canvas render, export) can remain one Worker slice."
+      contradictions: []
+      ambiguity_requiring_judge:
+        - "Whether to isolate grid-math into its own earlier mini-task (per goal.md's explicit allowance) vs. bundling into the single T003 vertical slice as currently drafted."
+        - "Exact bold/outlined font treatment seen in reference (thick white text, black stroke) - achievable with strokeText+fillText and a system bold font, but Judge should decide whether a custom web font is worth adding or a generic bold font is acceptable for this tranche."
+      commands:
+        - "ls -la"
+        - "find docs/goals -type f"
+        - "find . -not -path './.git*' -type f | sort"
+      note_needed: false
   - id: T002
     type: judge
     assignee: Judge
-    status: queued
+    status: done
     reasoning_hint: high
     objective: "Review Scout findings and decide the concrete architecture: monorepo layout (apps/calendar-generator/), tech stack, format/image asset convention (flat catalog of 12 entries + generic custom-event image), composition + export mechanism, and the exact week-grid algorithm. Produce the full first-slice Worker spec."
     inputs:
@@ -108,24 +136,145 @@ tasks:
       - "verify"
       - "stop_if"
       - "Blocked or deferred tasks"
-    receipt: null
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "Scout's findings are sound and unambiguous (Canvas 2D, worked grid algorithm, file:// export risk). Resolved both open ambiguities: isolate grid math into its own tested module within the single T003 slice (no separate task), and use a generic bold system font with stroke/fill text rather than a bundled webfont for this placeholder-art tranche. Produced the full T003 Worker spec covering scaffold, catalog, placeholders, grid, rendering, and export as one demoable vertical slice, consistent with goal.md's slice-sizing policy."
+      worker_package:
+        objective: "Implement the first vertical slice of the calendar generator app under apps/calendar-generator/: scaffold the app (index.html, style.css, package.json, src/ modules), seed the flat 12-entry format/event catalog (Moderno, Pauper, Duel, EDH Fun, Store Championship, Taller Novatos, Commander Party, Proximamente, Standard, Legacy, Draft, Sealed) each with its own placeholder image plus one generic custom-event placeholder image and one background/filler art asset and the Nicaragua flag graphic, implement the week-grid computation as an isolated tested module (src/grid.mjs + src/grid.test.mjs) correct for any month/year and verified against October 2026 (Fri/Sat/Sun rows only, dates 2,4,9,11,16,18,23,24,25,30 plus Nov 1 2026 spillover in the final Domingo cell), build a month/year picker and per-day (Fri/Sat/Sun only) selector UI (catalog entry or free-text custom label, label text always editable), render the full poster via Canvas 2D composition (1600x1236 canvas matching OCTUBRE 2026 reference aspect ratio: title bar, Nicaragua flag, VIERNES/SABADO/DOMINGO column headers, per-day cell with format art + bold white/black-stroke date number + label, unset days left as bare background with no date number drawn), and add a PNG export/download button using canvas.toBlob + URL.createObjectURL + an <a download> link. Use a generic bold system font stack (e.g. \"Arial Black\", system-ui, sans-serif) with strokeText+fillText for the outlined look; no custom web font this tranche. Self-verify by generating October 2026 with the reference's exact assignments, downloading the PNG, and recording that it was produced without errors when served over a local static server (never opened via file://)."
+        allowed_files:
+          - apps/calendar-generator/index.html
+          - apps/calendar-generator/style.css
+          - apps/calendar-generator/package.json
+          - apps/calendar-generator/README.md
+          - apps/calendar-generator/src/grid.mjs
+          - apps/calendar-generator/src/grid.test.mjs
+          - apps/calendar-generator/src/catalog.mjs
+          - apps/calendar-generator/src/render.mjs
+          - apps/calendar-generator/src/app.mjs
+          - apps/calendar-generator/assets/images/moderno.png
+          - apps/calendar-generator/assets/images/pauper.png
+          - apps/calendar-generator/assets/images/duel.png
+          - apps/calendar-generator/assets/images/edh-fun.png
+          - apps/calendar-generator/assets/images/store-championship.png
+          - apps/calendar-generator/assets/images/taller-novatos.png
+          - apps/calendar-generator/assets/images/commander-party.png
+          - apps/calendar-generator/assets/images/proximamente.png
+          - apps/calendar-generator/assets/images/standard.png
+          - apps/calendar-generator/assets/images/legacy.png
+          - apps/calendar-generator/assets/images/draft.png
+          - apps/calendar-generator/assets/images/sealed.png
+          - apps/calendar-generator/assets/images/custom-event.png
+          - apps/calendar-generator/assets/images/background.png
+          - apps/calendar-generator/assets/images/flag-nicaragua.png
+        verify:
+          - "node --test apps/calendar-generator/src/grid.test.mjs"
+          - "python3 -m http.server --directory apps/calendar-generator 8080 (or npx serve apps/calendar-generator), then open http://localhost:8080/ and confirm it does NOT run via file://"
+          - "In-browser: select October 2026, assign Oct2=Moderno, Oct4=EDH Fun, Oct9=Pauper, Oct11=EDH Fun, Oct16=Duel, Oct18=custom label 'Store Championship (Pauper)', Oct23=Moderno, Oct24=Taller Novatos, Oct25=Commander Party, Oct30=Pauper, Nov1(spillover)=Proximamente"
+          - "Click export/download and confirm a PNG file is produced with no console/security errors (canvas not tainted)"
+        stop_if:
+          - "Need any file outside allowed_files (e.g. a root-level package.json/workspace config) before adding it"
+          - "canvas.toDataURL/toBlob throws or yields a blank/tainted image even when served over local http(s) (not file://)"
+          - "Verification (grid unit test or manual export demo) fails twice after a fix attempt"
+          - "Reference layout requires an element unachievable with placeholder assets/plain canvas text (e.g. a licensing-gated font) without silently substituting"
+      evidence:
+        - docs/goals/calendar-generator/goal.md
+        - "docs/goals/calendar-generator/state.yaml (T001 receipt)"
+        - "docs/goals/calendar-generator/notes/reference-calendar-layout.png (1600x1236px, confirmed unset Sabado cells show no date number, only background art)"
+        - "repo listing: only .gitignore and docs/ exist at root; no apps/ yet"
+      subgoal_contract: null
+      parallel_safety: null
+      blocked_tasks: []
+      missing_evidence: []
+      required_board_updates:
+        - "Set T002 status=done with the architecture-decision receipt above (grid isolation inside T003, font choice, filler-via-background-bleed, 1600x1236 canvas, local-server-only export)."
+        - "Replace T003's objective/allowed_files/verify/stop_if with the worker_package above and set active_task=T003."
+        - "Leave T004 and T999 queued as-is; no change needed to them from this review."
   - id: T003
     type: worker
     assignee: Worker
-    status: queued
+    status: done
     reasoning_hint: medium
-    objective: "Implement the first vertical slice per Judge's T002 spec: scaffold apps/calendar-generator/, seed the format/event catalog with placeholder images (Moderno, Pauper, Duel, EDH Fun, Store Championship, Taller Novatos, Commander Party, Proximamente, Standard, Legacy, Draft, Sealed) plus a generic custom-event image, build the month/year + per-day picker UI (catalog selection or custom label, editable label text), implement the week-grid computation for any month/year (verified against October 2026), render the full poster via canvas composition matching the reference layout, and add a PNG export/download button."
-    allowed_files: []
-    verify: []
+    objective: "Implement the first vertical slice of the calendar generator app under apps/calendar-generator/: scaffold the app (index.html, style.css, package.json, src/ modules), seed the flat 12-entry format/event catalog (Moderno, Pauper, Duel, EDH Fun, Store Championship, Taller Novatos, Commander Party, Proximamente, Standard, Legacy, Draft, Sealed) each with its own placeholder image plus one generic custom-event placeholder image and one background/filler art asset and the Nicaragua flag graphic, implement the week-grid computation as an isolated tested module (src/grid.mjs + src/grid.test.mjs) correct for any month/year and verified against October 2026 (Fri/Sat/Sun rows only, dates 2,4,9,11,16,18,23,24,25,30 plus Nov 1 2026 spillover in the final Domingo cell), build a month/year picker and per-day (Fri/Sat/Sun only) selector UI (catalog entry or free-text custom label, label text always editable), render the full poster via Canvas 2D composition (1600x1236 canvas matching OCTUBRE 2026 reference aspect ratio: title bar, Nicaragua flag, VIERNES/SABADO/DOMINGO column headers, per-day cell with format art + bold white/black-stroke date number + label, unset days left as bare background with no date number drawn), and add a PNG export/download button using canvas.toBlob + URL.createObjectURL + an <a download> link. Use a generic bold system font stack (e.g. \"Arial Black\", system-ui, sans-serif) with strokeText+fillText for the outlined look; no custom web font this tranche. Self-verify by generating October 2026 with the reference's exact assignments, downloading the PNG, and recording that it was produced without errors when served over a local static server (never opened via file://)."
+    allowed_files:
+      - "apps/calendar-generator/index.html"
+      - "apps/calendar-generator/style.css"
+      - "apps/calendar-generator/package.json"
+      - "apps/calendar-generator/README.md"
+      - "apps/calendar-generator/src/grid.mjs"
+      - "apps/calendar-generator/src/grid.test.mjs"
+      - "apps/calendar-generator/src/catalog.mjs"
+      - "apps/calendar-generator/src/render.mjs"
+      - "apps/calendar-generator/src/app.mjs"
+      - "apps/calendar-generator/assets/images/moderno.png"
+      - "apps/calendar-generator/assets/images/pauper.png"
+      - "apps/calendar-generator/assets/images/duel.png"
+      - "apps/calendar-generator/assets/images/edh-fun.png"
+      - "apps/calendar-generator/assets/images/store-championship.png"
+      - "apps/calendar-generator/assets/images/taller-novatos.png"
+      - "apps/calendar-generator/assets/images/commander-party.png"
+      - "apps/calendar-generator/assets/images/proximamente.png"
+      - "apps/calendar-generator/assets/images/standard.png"
+      - "apps/calendar-generator/assets/images/legacy.png"
+      - "apps/calendar-generator/assets/images/draft.png"
+      - "apps/calendar-generator/assets/images/sealed.png"
+      - "apps/calendar-generator/assets/images/custom-event.png"
+      - "apps/calendar-generator/assets/images/background.png"
+      - "apps/calendar-generator/assets/images/flag-nicaragua.png"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "python3 -m http.server --directory apps/calendar-generator 8080 (or npx serve apps/calendar-generator), then open http://localhost:8080/ and confirm it does NOT run via file://"
+      - "In-browser: select October 2026, assign Oct2=Moderno, Oct4=EDH Fun, Oct9=Pauper, Oct11=EDH Fun, Oct16=Duel, Oct18=custom label 'Store Championship (Pauper)', Oct23=Moderno, Oct24=Taller Novatos, Oct25=Commander Party, Oct30=Pauper, Nov1(spillover)=Proximamente"
+      - "Click export/download and confirm a PNG file is produced with no console/security errors (canvas not tainted)"
     stop_if:
-      - "Need files outside allowed_files."
-      - "Behavior is ambiguous."
-      - "Verification fails twice."
-    receipt: null
+      - "Need any file outside allowed_files (e.g. a root-level package.json/workspace config) before adding it"
+      - "canvas.toDataURL/toBlob throws or yields a blank/tainted image even when served over local http(s) (not file://)"
+      - "Verification (grid unit test or manual export demo) fails twice after a fix attempt"
+      - "Reference layout requires an element unachievable with placeholder assets/plain canvas text (e.g. a licensing-gated font) without silently substituting"
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/index.html
+        - apps/calendar-generator/style.css
+        - apps/calendar-generator/package.json
+        - apps/calendar-generator/README.md
+        - apps/calendar-generator/src/grid.mjs
+        - apps/calendar-generator/src/grid.test.mjs
+        - apps/calendar-generator/src/catalog.mjs
+        - apps/calendar-generator/src/render.mjs
+        - apps/calendar-generator/src/app.mjs
+        - apps/calendar-generator/assets/images/moderno.png
+        - apps/calendar-generator/assets/images/pauper.png
+        - apps/calendar-generator/assets/images/duel.png
+        - apps/calendar-generator/assets/images/edh-fun.png
+        - apps/calendar-generator/assets/images/store-championship.png
+        - apps/calendar-generator/assets/images/taller-novatos.png
+        - apps/calendar-generator/assets/images/commander-party.png
+        - apps/calendar-generator/assets/images/proximamente.png
+        - apps/calendar-generator/assets/images/standard.png
+        - apps/calendar-generator/assets/images/legacy.png
+        - apps/calendar-generator/assets/images/draft.png
+        - apps/calendar-generator/assets/images/sealed.png
+        - apps/calendar-generator/assets/images/custom-event.png
+        - apps/calendar-generator/assets/images/background.png
+        - apps/calendar-generator/assets/images/flag-nicaragua.png
+      commands:
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs (re-run by PM)"
+          status: pass
+        - cmd: "PM follow-up: npx playwright install chromium; real headless Chromium run against python3 -m http.server serving apps/calendar-generator, selecting Oct 2026 (app default), applying all 10 required day assignments + the Nov1 spillover cell via actual DOM selects/inputs, clicking the real Download PNG button and capturing the real canvas.toBlob-produced download"
+          status: pass
+        - cmd: "Zero console errors and zero page errors during the full real-browser run"
+          status: pass
+        - cmd: "Visual inspection of the exported 662KB PNG (saved at /private/tmp/claude-502/-Users-Carlos-Documents-Carlos-mtg-nic-toolbox/8d8b2788-d477-4b76-9bf6-fad9e3125cb3/scratchpad/pw-verify/out/exported-calendar.png) against notes/reference-calendar-layout.png: title bar + flag match, VIERNES/SABADO/DOMINGO columns match, all 5 week rows correct, blank Sabado filler cells match, Nov 1 2026 spillover correctly shows in the final Domingo cell with the assigned Proximamente art, custom label 'Store Championship (Pauper)' on Oct 18 renders correctly overriding the default label"
+          status: pass
+      summary: "Worker (subagent) built the full vertical slice and self-verified via a headless node-canvas simulation (reporting honestly that no real browser was available to it). PM closed that gap directly: installed Playwright+Chromium, served the real app over http, drove the actual DOM (month/year default Oct 2026, all day selectors incl. the Oct18 custom-label override and the Nov1 spillover cell), and triggered the real canvas.toBlob export. Result: 0 console/page errors, a real 662KB PNG produced via the app's actual download flow, and its content visually matches the reference layout's structure exactly (grid, spillover, blank fillers, custom label). Unit test (6/6) re-confirmed. This satisfies the goal oracle's demo requirement for this tranche."
+      blocked_reason: null
+      spawned_tasks: []
   - id: T004
     type: worker
     assignee: Worker
-    status: queued
+    status: done
     reasoning_hint: low
     objective: "Scope this repo's GitHub credential to the dedicated magicthegatheringnicaragua account (distinct from the machine's default gh CLI account, carloscruzns, used over HTTPS) so pushes/PRs for mtg-nic-toolbox always authenticate as that account with nothing to switch. Repo already exists at github.com/magicthegatheringnicaragua/mtg-nic-toolbox.git (confirmed by user); user still needs to supply a fine-grained PAT for that account at the first push prompt (Worker cannot generate it). Set repo-local (not global) credential.helper=osxkeychain, user.name/user.email for that account, add remote origin as https://magicthegatheringnicaragua@github.com/magicthegatheringnicaragua/mtg-nic-toolbox.git, make the initial commit of docs/goals/calendar-generator/, and push. Confirmed: no existing global/system git credential.helper is configured on this machine, so the scoped-URL approach will not collide with gh CLI's carloscruzns session."
     allowed_files:
@@ -138,11 +287,26 @@ tasks:
     stop_if:
       - "Need the user to generate a Personal Access Token under magicthegatheringnicaragua and enter it at the credential prompt (external action Worker cannot perform)."
       - "A credential for magicthegatheringnicaragua@github.com already exists in Keychain and user has not confirmed whether to reuse or replace it."
-    receipt: null
+    receipt:
+      result: done
+      changed_files:
+        - .git/config
+      commands:
+        - cmd: "git remote -v"
+          status: pass
+        - cmd: "git config user.name && git config user.email"
+          status: pass
+        - cmd: "git branch -vv (confirms main tracks origin/main after push)"
+          status: pass
+        - cmd: "git config --global user.name && git config --global user.email (confirms carloscruzns untouched)"
+          status: pass
+      summary: "Completed directly with the user during the prep/early-execution conversation rather than via a dispatched Worker: set repo-local (not global) credential.helper=osxkeychain, user.name=magicthegatheringnicaragua, user.email=magicthegatheringnicaragua@gmail.com; added origin as the scoped https://magicthegatheringnicaragua@github.com/magicthegatheringnicaragua/mtg-nic-toolbox.git remote; committed the goal board files; user generated a fine-grained PAT and ran git push themselves. main now tracks origin/main. Global carloscruzns identity confirmed untouched for other repos. PM is recording this receipt now as board-health reconciliation so state.yaml reflects actual completed work."
+      blocked_reason: null
+      spawned_tasks: []
   - id: T999
     type: judge
     assignee: Judge
-    status: queued
+    status: active
     reasoning_hint: high
     objective: "Audit whether the implemented slice satisfies the Goal Oracle: date-grid unit test passes for October 2026, and a visual demo/comparison against notes/reference-calendar-layout.png confirms layout fidelity (title bar, flag, columns, per-day images/labels, spillover days, custom-event path)."
     inputs:

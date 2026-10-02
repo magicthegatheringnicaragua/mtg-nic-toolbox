@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generador de Calendario - MTG Nicaragua</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Generador de Calendario Mensual</h1>
+      <p class="subtitle">MTG Nicaragua</p>
+    </header>
+
+    <main>
+      <section class="controls">
+        <div class="picker-row">
+          <label>
+            Mes
+            <select id="month-select"></select>
+          </label>
+          <label>
+            Año
+            <input id="year-input" type="number" min="1970" max="2999" />
+          </label>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div id="days-list" class="days-list"></div>
+
+        <button id="download-button" type="button">Descargar PNG</button>
+      </section>
+
+      <section class="preview">
+        <canvas id="calendar-canvas"></canvas>
+      </section>
+    </main>
+
+    <script type="module" src="src/app.mjs"></script>
+  </body>
+</html>
