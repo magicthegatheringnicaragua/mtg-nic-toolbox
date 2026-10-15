@@ -32,11 +32,12 @@ Then open `http://localhost:8080/` in a browser.
 - `src/app.mjs` - DOM wiring: month/year picker, per-day selector UI,
   scheduling re-renders, and the PNG download button
   (`canvas.toBlob` + `URL.createObjectURL` + `<a download>`).
-- `assets/images/` - placeholder art (simple programmatic gradients/shapes)
-  for each catalog entry, the generic custom-event image, the continuous
-  background/filler art, and the Nicaragua flag graphic. Real art can be
-  swapped in later by replacing these files in place; filenames and the
-  catalog's `image` paths should stay in sync.
+- `assets/images/` - catalog art (Magic: The Gathering *Reality Fracture*
+  card art) for each catalog entry, the generic custom-event image, the
+  continuous background/filler art, and the top-right MTG Nicaragua logo
+  graphic (`flag-nicaragua.png`). Filenames and the catalog's `image` paths
+  stay in sync. See `assets/images/ATTRIBUTION.md` for card-art sourcing and
+  the Wizards of the Coast Fan Content Policy notice.
 
 ## Catalog
 

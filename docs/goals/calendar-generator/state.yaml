@@ -7,12 +7,12 @@ goal:
   title: "Calendar Generator (mtg-nic-toolbox)"
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
-  tranche: "Ship a working first vertical slice of the calendar-generator app: month/day format picker, custom-event path, correct week-grid math, canvas-composed poster image matching the reference layout, and PNG export."
+  tranche: "Tranche 2 (art pass): replace the Nicaragua flag with the full-mtg-nic-logo asset (non-distorting fit), and replace all 12 catalog + custom-event + background placeholder images with curated Magic: The Gathering Reality Fracture card art, with attribution recorded."
   status: done # active | blocked | done
   oracle:
-    signal: "Generate the October 2026 calendar in the app, assign formats/custom events per notes/reference-calendar-layout.png, download the PNG, and visually confirm it reproduces that reference's structure (title bar + Nicaragua flag, VIERNES/SABADO/DOMINGO columns, correct per-day images/labels, correct week-grid math including adjacent-month spillover days)."
+    signal: "Generate the October 2026 calendar in the app with the same reference assignments as tranche 1, download the PNG, and visually confirm: (a) the top-right graphic is the mtg-nic logo, not the Nicaragua flag, rendered without stretching/distortion, and (b) every format cell + the custom-event fallback + the background show real Reality Fracture card art instead of placeholder gradients, while the grid/date/spillover/label behavior from tranche 1 is unchanged."
     cadence: "after each Worker package and at final audit"
-    final_proof: "Unit test covering October 2026's exact date-grid placement (2,4,9,11,16,18,23,24,25,30 + Nov 1 spillover) PASSES, and a visual demo/comparison against the reference image is recorded in the final audit receipt."
+    final_proof: "Unit test still passes (grid logic untouched), a visual demo/comparison confirms the logo and real art render correctly with no distortion, and attribution for the card art source is recorded in the repo."
   intake:
     original_request: "Build the first app of mtg-nic-toolbox: a tool for the MTG community in Nicaragua to generate monthly event calendars matching a reference poster layout, selecting a format (or custom event) per Fri/Sat/Sun day, each with its own repo-hosted image, plus a generic image for custom events."
     interpreted_outcome: "A static client-side web app, scaffolded as apps/calendar-generator/ in a monorepo, that lets the organizer pick a month, assign a format/custom label+image to each weekend day, and export a PNG poster matching the reference calendar layout."
@@ -341,6 +341,141 @@ tasks:
         - "Set T999 status=done with this receipt and full_outcome_complete=true."
         - "Set goal.status=done in state.yaml."
         - "Non-blocking note: local commit bae9206 is 1 commit ahead of origin/main (not yet pushed); push is out of this tranche's scope, flagged for operator awareness."
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: >
+      Tranche 2 art pass. (1) Replace the Nicaragua flag with the logo at
+      apps/calendar-generator/assets/images/full-mtg-nic-logo.jpg (1600x581,
+      user-provided, already in the repo). Convert/copy it to
+      apps/calendar-generator/assets/images/flag-nicaragua.png (keep the
+      existing filename/export name to avoid a wider refactor) OR rename the
+      catalog.mjs export to LOGO_IMAGE if clearer - PM's call, but keep
+      changes minimal. Since the logo's aspect ratio (~2.75:1) does not match
+      the old flag box's fixed 340x180 stretch target, update render.mjs to
+      size the logo with a non-distorting "contain" fit (preserve aspect
+      ratio) instead of stretching, anchored top-right, same general area/
+      scale as the old flag so it doesn't overlap the title text. (2) Replace
+      all 12 catalog placeholder images, custom-event.png, and background.png
+      with the curated Magic: The Gathering Reality Fracture card art already
+      downloaded to
+      /private/tmp/claude-502/-Users-Carlos-Documents-Carlos-mtg-nic-toolbox/8d8b2788-d477-4b76-9bf6-fad9e3125cb3/scratchpad/card-art/
+      (one .jpg per catalog slug, e.g. moderno.jpg, pauper.jpg, ... ,
+      custom-event.jpg, background.jpg - filenames already match the
+      catalog.mjs slugs). Convert each .jpg to .png (e.g. via macOS `sips -s
+      format png in.jpg --out out.png`) and place at the exact existing
+      paths apps/calendar-generator/assets/images/<slug>.png, overwriting the
+      placeholder gradients. Do not change catalog.mjs's id/name/image-path
+      wiring for these 12 - only the file contents change. (3) Copy
+      /private/tmp/claude-502/-Users-Carlos-Documents-Carlos-mtg-nic-toolbox/8d8b2788-d477-4b76-9bf6-fad9e3125cb3/scratchpad/card-art/ATTRIBUTION.txt
+      into the repo (e.g. apps/calendar-generator/assets/images/ATTRIBUTION.md
+      or appended to the app's README.md) crediting Wizards of the Coast /
+      Reality Fracture and noting this is fan content for a non-commercial
+      community calendar (Wizards' Fan Content Policy). (4) Re-run the grid
+      unit test (should be unaffected) and re-verify visually (ideally a real
+      headless-browser export like tranche 1's T003) that the logo renders
+      without distortion and the new art appears correctly in each cell.
+    allowed_files:
+      - "apps/calendar-generator/assets/images/flag-nicaragua.png"
+      - "apps/calendar-generator/assets/images/moderno.png"
+      - "apps/calendar-generator/assets/images/pauper.png"
+      - "apps/calendar-generator/assets/images/duel.png"
+      - "apps/calendar-generator/assets/images/edh-fun.png"
+      - "apps/calendar-generator/assets/images/store-championship.png"
+      - "apps/calendar-generator/assets/images/taller-novatos.png"
+      - "apps/calendar-generator/assets/images/commander-party.png"
+      - "apps/calendar-generator/assets/images/proximamente.png"
+      - "apps/calendar-generator/assets/images/standard.png"
+      - "apps/calendar-generator/assets/images/legacy.png"
+      - "apps/calendar-generator/assets/images/draft.png"
+      - "apps/calendar-generator/assets/images/sealed.png"
+      - "apps/calendar-generator/assets/images/custom-event.png"
+      - "apps/calendar-generator/assets/images/background.png"
+      - "apps/calendar-generator/assets/images/ATTRIBUTION.md"
+      - "apps/calendar-generator/src/render.mjs"
+      - "apps/calendar-generator/README.md"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "Real or headless-browser export of October 2026 with the tranche-1 reference assignments: logo renders top-right with no visible stretching/distortion, and each assigned day cell + background show real card art, not placeholder gradients"
+      - "No console/page errors during the export run"
+    stop_if:
+      - "full-mtg-nic-logo.jpg cannot be read/converted cleanly"
+      - "Downloaded card-art files are missing or unreadable at the scratch path above"
+      - "Verification fails twice after a fix attempt"
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/assets/images/flag-nicaragua.png
+        - apps/calendar-generator/assets/images/moderno.png
+        - apps/calendar-generator/assets/images/pauper.png
+        - apps/calendar-generator/assets/images/duel.png
+        - apps/calendar-generator/assets/images/edh-fun.png
+        - apps/calendar-generator/assets/images/store-championship.png
+        - apps/calendar-generator/assets/images/taller-novatos.png
+        - apps/calendar-generator/assets/images/commander-party.png
+        - apps/calendar-generator/assets/images/proximamente.png
+        - apps/calendar-generator/assets/images/standard.png
+        - apps/calendar-generator/assets/images/legacy.png
+        - apps/calendar-generator/assets/images/draft.png
+        - apps/calendar-generator/assets/images/sealed.png
+        - apps/calendar-generator/assets/images/custom-event.png
+        - apps/calendar-generator/assets/images/background.png
+        - apps/calendar-generator/assets/images/ATTRIBUTION.md
+        - apps/calendar-generator/src/render.mjs
+        - apps/calendar-generator/README.md
+      commands:
+        - cmd: "sips -s format png full-mtg-nic-logo.jpg --out flag-nicaragua.png (1600x581 verified)"
+          status: pass
+        - cmd: "sips -s format png <slug>.jpg --out <slug>.png for all 14 card-art files"
+          status: pass
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "Real headless Chromium run (fresh playwright+chromium install in scratchpad): served app over http, assigned tranche-1 reference days incl. custom label + Nov1 spillover, clicked real Download PNG button, captured real canvas.toBlob export"
+          status: pass
+        - cmd: "0 console errors, 0 page errors during the run"
+          status: pass
+        - cmd: "PM personally viewed exported-calendar.png via Read: logo undistorted top-right, all 12 cells + background show real Reality Fracture art, no placeholder gradients remain"
+          status: pass
+      summary: "Converted full-mtg-nic-logo.jpg to flag-nicaragua.png; added drawContain() in render.mjs so the logo keeps its aspect ratio (clamped to 340x150, inside the title bar, no overlap with OCTUBRE 2026 text) instead of stretching. Converted all 14 Reality Fracture card-art jpgs (sourced via Scryfall art_crop for the real Reality Fracture set) to the matching catalog/custom-event/background png paths, no catalog.mjs changes needed. Added ATTRIBUTION.md (Wizards of the Coast / Fan Content Policy notice, per-slug card credits) plus a README pointer. Unit test 6/6 pass. Real headless-Chromium export produced with 0 console/page errors; PM personally viewed the result: logo correct and undistorted, every cell and the background show real card art."
+      blocked_reason: null
+      spawned_tasks: []
+  - id: T006
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit tranche 2: confirm the mtg-nic logo replaced the flag without distortion, all 12 catalog images + custom-event + background use the real Reality Fracture art (not placeholders), attribution is recorded in the repo, the grid unit test still passes, and tranche 1's behavior (grid/spillover/custom-label) is unchanged. Personally view the exported PNG and the logo file, don't just trust the Worker's prose."
+    inputs:
+      - "T005 receipt"
+      - "docs/goals/calendar-generator/notes/reference-calendar-layout.png"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if any catalog image still looks like a placeholder gradient rather than real card art."
+      - "Reject completion if the logo is visibly stretched/distorted."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Personally ran node --test grid.test.mjs: 6/6 pass. Personally viewed flag-nicaragua.png (clean MTG Nicaragua logo, no distortion) and all 14 art assets (12 catalog + custom-event + background): every one is real Reality Fracture card art, no placeholder gradients remain. Personally viewed exported-calendar.png: logo top-right, contained/undistorted, not overlapping OCTUBRE 2026 title; every assigned cell shows real art; unset Sabado cells bleed background art; dates/spillover (Nov1)/custom-label match tranche 1 exactly. ATTRIBUTION.md exists with Wizards of the Coast/Fan Content Policy notice and a per-slug card credit table; README.md references it."
+      evidence:
+        - "node --test apps/calendar-generator/src/grid.test.mjs run by Judge: 6/6 pass"
+        - "apps/calendar-generator/assets/images/flag-nicaragua.png viewed by Judge via Read: MTG Nicaragua logo, no stretching"
+        - "All 14 catalog/custom-event/background png files viewed by Judge via Read: real card art"
+        - "exported-calendar.png viewed by Judge via Read: full poster composition correct"
+        - "ATTRIBUTION.md and README.md viewed by Judge via Read"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Set T006 status=done with this receipt, decision=complete, full_outcome_complete=true."
+        - "Set goal.status=done (tranche 2 complete)."
+        - "PM to commit tranche 2 changes and .gitignore .DS_Store (handled separately by PM)."
 checks:
   dirty_fingerprint: unknown
   last_verification:

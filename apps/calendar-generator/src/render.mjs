@@ -92,11 +92,21 @@ export function renderCalendar(ctx, { year, monthIndex, assignments, images }) {
     baseline: 'alphabetic',
   });
 
-  // 3. Nicaragua flag, top-right.
+  // 3. Logo, top-right. The source asset (~2.75:1, 1600x581) does not match
+  // the old square-ish flag box, so it is drawn with a non-distorting
+  // "contain" fit (preserve aspect ratio, scaled to fit within a bounding
+  // box) rather than stretched to a fixed box. The bounding box keeps
+  // roughly the same area/scale as the old 340x180 flag box and is clamped
+  // to stay within the title bar (height 170px) so it never overlaps the
+  // "OCTUBRE 2026" title text, which starts at y=110.
   if (images.flag) {
-    const flagW = 340;
-    const flagH = 180;
-    ctx.drawImage(images.flag, CANVAS_WIDTH - flagW - GRID_MARGIN_X, 10, flagW, flagH);
+    const boxW = 340;
+    // Clamped so boxY + boxH stays comfortably inside TITLE_AREA_HEIGHT
+    // (170px), leaving a bottom margin below the box.
+    const boxH = 150;
+    const boxX = CANVAS_WIDTH - boxW - GRID_MARGIN_X;
+    const boxY = 10;
+    drawContain(ctx, images.flag, boxX, boxY, boxW, boxH);
   }
 
   // 4. Column headers (VIERNES / SABADO / DOMINGO)
@@ -169,6 +179,28 @@ export function renderCalendar(ctx, { year, monthIndex, assignments, images }) {
       }
     });
   });
+}
+
+/**
+ * Draws `image` scaled to fit entirely within the box (x, y, w, h) while
+ * preserving its aspect ratio (like CSS `background-size: contain`),
+ * centering it within the box, instead of the default drawImage
+ * stretch-to-fit behavior. Used for the logo, whose aspect ratio does not
+ * match its bounding box.
+ */
+function drawContain(ctx, image, x, y, w, h) {
+  const imgW = image.naturalWidth || image.width;
+  const imgH = image.naturalHeight || image.height;
+  if (!imgW || !imgH) {
+    ctx.drawImage(image, x, y, w, h);
+    return;
+  }
+  const scale = Math.min(w / imgW, h / imgH);
+  const drawW = imgW * scale;
+  const drawH = imgH * scale;
+  const dx = x + (w - drawW) / 2;
+  const dy = y + (h - drawH) / 2;
+  ctx.drawImage(image, dx, dy, drawW, drawH);
 }
 
 /**
