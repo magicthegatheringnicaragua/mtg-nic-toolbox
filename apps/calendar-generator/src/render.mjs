@@ -77,18 +77,34 @@ function wrapText(ctx, text, maxWidth, font) {
  *   node-canvas Image) to draw for that day's cell.
  * @param {object} options.images
  * @param {any} options.images.flag - Nicaragua flag graphic
+ * @param {object} [options.background] - Selected background option (see
+ *   backgrounds.mjs). `{ image: null }` or omitted means use the default
+ *   procedural striped background; `{ image: <loaded image> }` draws that
+ *   image full-bleed with a "cover" fit instead.
  */
-export function renderCalendar(ctx, { year, monthIndex, assignments, images }) {
+export function renderCalendar(ctx, { year, monthIndex, assignments, images, background }) {
   const rows = getWeekendGrid(year, monthIndex);
   const rowCount = rows.length;
 
   ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  // 1. Full-bleed procedurally-drawn blue diagonal-stripe background behind
-  // everything, including unset cells (matches the reference: unset Sabado
-  // cells show the same background art bleeding through, not a blank
-  // cell). Matches the blue/diagonal-stripe motif of the logo graphic.
-  drawStripedBackground(ctx);
+  // 1. Full-bleed background behind everything, including unset cells
+  // (matches the reference: unset Sabado cells show the same background
+  // art bleeding through, not a blank cell). Either the default
+  // procedurally-drawn blue diagonal-stripe field (matching the
+  // blue/diagonal-stripe motif of the logo graphic), or a selected
+  // repo-hosted gallery image drawn full-bleed with a non-distorting
+  // "cover" fit (see backgrounds.mjs).
+  if (background && background.image) {
+    // Centered (not top-biased) vertical anchor: unlike the portrait
+    // day-cell character art drawCover() is normally used for, this is a
+    // landscape full-bleed background whose focal points (e.g. a face and
+    // a separate explosion/vista) are not reliably in the top of the
+    // frame, so a centered crop is the safer general-purpose default.
+    drawCover(ctx, background.image, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, 0.5);
+  } else {
+    drawStripedBackground(ctx);
+  }
 
   // 2. Title bar: "OCTUBRE 2026" - fixed, accent-free string, uses the
   // display font.
@@ -260,14 +276,16 @@ function drawContain(ctx, image, x, y, w, h) {
  * (like CSS `background-size: cover`), cropping overflow, instead of the
  * default drawImage stretch-to-fit behavior.
  *
- * The vertical anchor is top-biased (only 15% of the vertical overflow is
- * trimmed from the top, vs. a centered 50%) because these portrait-style
- * character art pieces have their faces in the upper 15-30% of the source
+ * `vAnchor` controls how vertical overflow is trimmed (0 = all trimmed from
+ * the bottom, 1 = all trimmed from the top, 0.5 = centered). Defaults to
+ * 0.15 (mostly top-anchored) because the day-cell portrait-style character
+ * art this is normally used for has faces in the upper 15-30% of the source
  * image - a centered crop tends to cut off faces and show mostly
- * chest/torso once the art is scaled to cover a landscape cell. Horizontal
- * centering is unchanged.
+ * chest/torso once the art is scaled to cover a landscape cell. Callers
+ * with differently-composed art (e.g. full-bleed background images) can
+ * pass a different anchor. Horizontal centering is unchanged.
  */
-function drawCover(ctx, image, x, y, w, h) {
+function drawCover(ctx, image, x, y, w, h, vAnchor = 0.15) {
   const imgW = image.naturalWidth || image.width;
   const imgH = image.naturalHeight || image.height;
   if (!imgW || !imgH) {
@@ -278,7 +296,7 @@ function drawCover(ctx, image, x, y, w, h) {
   const drawW = imgW * scale;
   const drawH = imgH * scale;
   const dx = x + (w - drawW) / 2;
-  const dy = y + (h - drawH) * 0.15;
+  const dy = y + (h - drawH) * vAnchor;
   ctx.drawImage(image, dx, dy, drawW, drawH);
 }
 

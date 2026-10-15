@@ -25,19 +25,29 @@ Then open `http://localhost:8080/` in a browser.
   spillover), covered by `src/grid.test.mjs` (`node --test src/grid.test.mjs`).
 - `src/catalog.mjs` - the flat 12-entry format/event catalog plus the
   generic custom-event image and shared background/flag asset paths.
-- `src/render.mjs` - pure Canvas 2D composition (title bar, flag, column
-  headers, per-day cells). Only depends on a CanvasRenderingContext2D-shaped
-  `ctx`, so it is reusable outside the browser (e.g. with a Node canvas
-  polyfill) for headless verification.
-- `src/app.mjs` - DOM wiring: month/year picker, per-day selector UI,
-  scheduling re-renders, and the PNG download button
-  (`canvas.toBlob` + `URL.createObjectURL` + `<a download>`).
+- `src/backgrounds.mjs` - the selectable full-background gallery list (the
+  "Fondo" picker). Each entry is `{id, name, image}`; `image: null` means
+  "use the existing procedural `drawStripedBackground()`", otherwise it is
+  a repo-hosted image path drawn full-bleed with a "cover" fit. Adding a
+  future gallery option is just one more entry here plus one image file
+  under `assets/backgrounds/`.
+- `src/render.mjs` - pure Canvas 2D composition (background, title bar,
+  flag, column headers, per-day cells). Only depends on a
+  CanvasRenderingContext2D-shaped `ctx`, so it is reusable outside the
+  browser (e.g. with a Node canvas polyfill) for headless verification.
+- `src/app.mjs` - DOM wiring: month/year/background pickers, per-day
+  selector UI, preloading images (catalog art plus any image-backed
+  background gallery options), scheduling re-renders, and the PNG download
+  button (`canvas.toBlob` + `URL.createObjectURL` + `<a download>`).
 - `assets/images/` - catalog art (Magic: The Gathering *Reality Fracture*
   card art) for each catalog entry, the generic custom-event image, the
   continuous background/filler art, and the top-right MTG Nicaragua logo
   graphic (`flag-nicaragua.png`). Filenames and the catalog's `image` paths
   stay in sync. See `assets/images/ATTRIBUTION.md` for card-art sourcing and
   the Wizards of the Coast Fan Content Policy notice.
+- `assets/backgrounds/` - image-backed full-background gallery options
+  listed in `src/backgrounds.mjs` (currently just `echoverse-reveal.jpg`).
+  See `assets/backgrounds/ATTRIBUTION.md` for sourcing.
 - `assets/fonts/beleren-bold.ttf` - the real Beleren2016-Bold typeface (the
   actual font used in Magic's branding), used only for the poster's
   month/year title and VIERNES/SABADO/DOMINGO column headers (see

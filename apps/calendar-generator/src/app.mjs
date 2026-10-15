@@ -7,6 +7,7 @@
 import { getWeekendCells, dateKey, WEEKDAY_LABELS, SPANISH_MONTH_NAMES } from './grid.mjs';
 import { CATALOG, CUSTOM_EVENT_IMAGE, FLAG_IMAGE, findCatalogEntry } from './catalog.mjs';
 import { renderCalendar, buildAssignments, CANVAS_WIDTH, CANVAS_HEIGHT } from './render.mjs';
+import { BACKGROUNDS, DEFAULT_BACKGROUND_ID, findBackground } from './backgrounds.mjs';
 
 const DEFAULT_YEAR = 2026;
 const DEFAULT_MONTH_INDEX = 9; // October - matches the reference demo month
@@ -16,7 +17,8 @@ const COLUMN_LABEL = { friday: 'VIERNES', saturday: 'SABADO', sunday: 'DOMINGO' 
 /** selections: dateKey -> { kind: 'catalog' | 'custom', catalogId?: string, label: string } */
 const selections = new Map();
 
-let resolvedImages = null; // { catalogById: Map<id, Image>, custom: Image, flag: Image }
+let resolvedImages = null; // { catalogById: Map<id, Image>, custom: Image, flag: Image, backgroundsById: Map<id, Image> }
+let selectedBackgroundId = DEFAULT_BACKGROUND_ID;
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -31,12 +33,23 @@ async function preloadImages() {
   const catalogEntries = await Promise.all(
     CATALOG.map(async (entry) => [entry.id, await loadImage(entry.image)]),
   );
+  // Preload every image-backed background gallery option (not just the
+  // catalog art), so switching the "Fondo" selector never needs to wait on
+  // a fresh network fetch. Entries with image: null (e.g. the default
+  // striped background) have nothing to preload.
+  const backgroundEntries = await Promise.all(
+    BACKGROUNDS.filter((entry) => entry.image).map(async (entry) => [
+      entry.id,
+      await loadImage(entry.image),
+    ]),
+  );
   const [custom, flag] = await Promise.all([
     loadImage(CUSTOM_EVENT_IMAGE),
     loadImage(FLAG_IMAGE),
   ]);
   return {
     catalogById: new Map(catalogEntries),
+    backgroundsById: new Map(backgroundEntries),
     custom,
     flag,
   };
@@ -44,6 +57,12 @@ async function preloadImages() {
 
 function buildCatalogOptionsHtml() {
   return CATALOG.map((entry) => `<option value="${entry.id}">${entry.name}</option>`).join('');
+}
+
+function buildBackgroundOptionsHtml() {
+  return BACKGROUNDS.map((entry) => `<option value="${entry.id}">${entry.name}</option>`).join(
+    '',
+  );
 }
 
 function dayRowTemplate(cell) {
@@ -116,11 +135,21 @@ function renderNow() {
   const canvas = getCanvas();
   const ctx = canvas.getContext('2d');
   const assignments = buildAssignments(selections, resolvedImages);
+  const backgroundEntry = findBackground(selectedBackgroundId);
+  const background = backgroundEntry
+    ? {
+        id: backgroundEntry.id,
+        image: backgroundEntry.image
+          ? resolvedImages.backgroundsById.get(backgroundEntry.id)
+          : null,
+      }
+    : null;
   renderCalendar(ctx, {
     year,
     monthIndex,
     assignments,
     images: { flag: resolvedImages.flag },
+    background,
   });
 }
 
@@ -156,6 +185,15 @@ function setupControls() {
 
   monthSelect.addEventListener('change', regenerateForSelectedMonth);
   yearInput.addEventListener('change', regenerateForSelectedMonth);
+
+  const backgroundSelect = document.getElementById('background-select');
+  backgroundSelect.innerHTML = buildBackgroundOptionsHtml();
+  backgroundSelect.value = DEFAULT_BACKGROUND_ID;
+  selectedBackgroundId = DEFAULT_BACKGROUND_ID;
+  backgroundSelect.addEventListener('change', () => {
+    selectedBackgroundId = backgroundSelect.value;
+    scheduleRender();
+  });
 
   const canvas = getCanvas();
   canvas.width = CANVAS_WIDTH;

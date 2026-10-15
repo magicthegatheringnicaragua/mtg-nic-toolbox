@@ -8,7 +8,7 @@ goal:
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
   tranche: "Tranche 9 (design-polish backlog): add a selectable full-background image gallery (striped default + one user-chosen image for now, 'Echoverse' reveal art), structured so more can be added later with just a data entry + an image file."
-  status: active # active | blocked | done
+  status: done # active | blocked | done
   oracle:
     signal: "Generate the October 2026 calendar, confirm the default striped background is unchanged, and confirm selecting the new 'Echoverse' background option renders that art full-bleed (cover-fit, not stretched) with all cell art/grid/text still rendering correctly on top."
     cadence: "after each Worker package and at final audit"
@@ -65,7 +65,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/calendar-generator/"
     command: "node <skill-path>/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/calendar-generator"
 
-active_task: T019
+active_task: null
 
 tasks:
   - id: T001
@@ -1072,7 +1072,7 @@ tasks:
   - id: T019
     type: worker
     assignee: Worker
-    status: active
+    status: done
     reasoning_hint: medium
     objective: >
       Add a selectable full-background image gallery feature, extensible for
@@ -1133,11 +1133,30 @@ tasks:
     stop_if:
       - "The cover-fit background image looks badly cropped in a way that loses the hooded-figure face or the city-burst focal point - adjust crop/positioning once; if still bad, report rather than ship"
       - "Verification fails twice after a fix attempt"
-    receipt: null
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/assets/backgrounds/echoverse-reveal.jpg
+        - apps/calendar-generator/assets/backgrounds/ATTRIBUTION.md
+        - apps/calendar-generator/src/backgrounds.mjs
+        - apps/calendar-generator/index.html
+        - apps/calendar-generator/src/app.mjs
+        - apps/calendar-generator/src/render.mjs
+        - apps/calendar-generator/README.md
+      commands:
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "Headless Chromium export of both background options via canvas.toBlob"
+          status: pass
+        - cmd: "PM personally viewed both t019-striped.png and t019-echoverse.png: striped unchanged, Echoverse renders full-bleed cover-fit with both focal points intact, cell art/grid/text correctly layered on top"
+          status: pass
+      summary: "Added background.mjs gallery list ({striped, echoverse-reveal}), a #background-select control, app.mjs wiring, and render.mjs cover-fit image drawing (drawCover now takes a vAnchor param, 0.5 for the landscape background vs 0.15 for portrait cell art). Added backgrounds/ATTRIBUTION.md crediting the art generically (artist unconfirmed) via TCGplayer sourcing. Unit test 6/6 pass. PM confirmed visually: both options render correctly."
+      blocked_reason: null
+      spawned_tasks: []
   - id: T020
     type: judge
     assignee: Judge
-    status: queued
+    status: done
     reasoning_hint: high
     objective: "Audit the background-gallery feature: personally view exports with both background options (striped default, and the new 'Echoverse' image). Confirm the default is unchanged, confirm the new option renders full-bleed without distortion/awkward cropping, confirm the data structure is genuinely easy to extend (one entry + one file, per user's stated intent), and confirm attribution is recorded for the new image."
     inputs:
@@ -1151,7 +1170,21 @@ tasks:
       - "full_outcome_complete: true | false"
       - "missing evidence"
       - "next task if not complete"
-    receipt: null
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Personally ran grid.test.mjs: 6/6 pass. Personally viewed both background exports: striped unchanged, Echoverse full-bleed cover-fit with both focal points intact. Confirmed backgrounds.mjs is a minimal 2-entry {id,name,image} list, render.mjs reuses drawCover() rather than duplicating logic, app.mjs/index.html are fully data-driven with zero hardcoded references to the new id. ATTRIBUTION.md honestly discloses unconfirmed provenance."
+      evidence:
+        - "node --test grid.test.mjs: 6/6 pass"
+        - "t019-striped.png and t019-echoverse.png viewed by Judge via Read"
+        - "backgrounds.mjs, render.mjs, app.mjs, ATTRIBUTION.md read in full by Judge"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Set T020 status=done, decision=complete, full_outcome_complete=true."
+        - "Set goal.status=done (tranche 9 complete)."
+        - "PM to commit tranche 9 changes."
   - id: T021
     type: worker
     assignee: Worker
