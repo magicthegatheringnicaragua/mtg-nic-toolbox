@@ -7,25 +7,25 @@
 // canvas implementation used for self-verification (both expose the same
 // 2D context API).
 //
-// Fonts: a generic bold system font stack (FONT_STACK) is used for date
-// numbers and per-day labels, with strokeText (black) under fillText
-// (white) to get the thick white-fill/black-stroke "poster" look from the
-// reference image. A second, licensed-with-caveats display font
-// (DISPLAY_FONT_STACK, "MagicLogo" - the real Beleren2016-Bold, see
-// assets/fonts/LICENSE-NOTICE.md) is used ONLY for the two fixed
-// strings: the month/year title and the VIERNES/SABADO/DOMINGO column
-// headers. Beleren2016-Bold does have full Spanish glyph coverage
-// (Ñ/ñ/accents/¿/¡), but it is intentionally kept scoped to just the
-// title/headers for this tranche - expanding it to date numbers or
-// per-day labels is a separate decision the repo owner hasn't made yet.
+// Fonts: all poster text - the month/year title, the VIERNES/SABADO/DOMINGO
+// column headers, date numbers, and per-day labels (including free-text
+// custom labels) - uses DISPLAY_FONT_STACK ("MagicLogo", the real
+// Beleren2016-Bold, see assets/fonts/LICENSE-NOTICE.md), with strokeText
+// (black) under fillText (white) to get the thick white-fill/black-stroke
+// "poster" look from the reference image. Beleren2016-Bold has full Spanish
+// glyph coverage (Ñ/ñ/accents/¿/¡, verified in tranche 7), so there is no
+// glyph-coverage reason left to keep date numbers/labels on a separate
+// generic font. The old generic font stack is no longer referenced as a
+// standalone constant - its "Arial Black", system-ui, sans-serif tail lives
+// on as the fallback portion of DISPLAY_FONT_STACK's own stack string.
 
 import { getWeekendGrid, isInMonth, dateKey, WEEKDAY_LABELS, SPANISH_MONTH_NAMES } from './grid.mjs';
 
 export const CANVAS_WIDTH = 2000;
 export const CANVAS_HEIGHT = 1236;
 
-const FONT_STACK = '"Arial Black", system-ui, sans-serif';
-// Used ONLY for the title and column headers - see note above.
+// Used for all poster text (title, headers, date numbers, labels) - see
+// note above.
 const DISPLAY_FONT_STACK = '"MagicLogo", "Arial Black", system-ui, sans-serif';
 
 const TITLE_AREA_HEIGHT = 170;
@@ -181,14 +181,14 @@ export function renderCalendar(ctx, { year, monthIndex, assignments, images, bac
         // Date number, top-left of the cell.
         const dayNumber = String(date.getDate());
         outlinedText(ctx, dayNumber, cellX + 14, cellY + 54, {
-          font: `bold 54px ${FONT_STACK}`,
+          font: `bold 54px ${DISPLAY_FONT_STACK}`,
           strokeWidth: 8,
           align: 'left',
           baseline: 'alphabetic',
         });
 
         // Label, wrapped to fit the cell, anchored near the bottom.
-        const labelFont = `bold 34px ${FONT_STACK}`;
+        const labelFont = `bold 34px ${DISPLAY_FONT_STACK}`;
         const maxWidth = columnWidth - 28;
         const lines = wrapText(ctx, assignment.label || '', maxWidth, labelFont);
         const lineHeight = 40;

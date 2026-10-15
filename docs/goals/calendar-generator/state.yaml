@@ -7,12 +7,12 @@ goal:
   title: "Calendar Generator (mtg-nic-toolbox)"
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
-  tranche: "Tranche 12: unify all poster text onto the real Beleren2016-Bold font (date numbers and per-day labels, not just title/headers), since Beleren has full Spanish glyph coverage."
+  tranche: "Tranche 13: add a per-day event time with weekday-based defaults (Friday 7:00 PM, Saturday 2:00 PM, Sunday 11:00 AM) that the user can override per day."
   status: active # active | blocked | done
   oracle:
-    signal: "Generate the October 2026 calendar and visually confirm date numbers and per-day labels (including an accented-character custom label) now render in the Beleren display font, matching the title/headers, with no missing-glyph boxes. No regression to tranches 1-11."
+    signal: "Generate the October 2026 calendar: Friday/Saturday/Sunday assignments default to the correct time appended to their label, and overriding a day's time control changes the rendered output accordingly. No regression to tranches 1-12."
     cadence: "after each Worker package and at final audit"
-    final_proof: "Unit test still passes, a visual demo confirms font unification with no missing glyphs anywhere on the poster."
+    final_proof: "Unit test still passes (including new formatTime12h coverage), a visual demo confirms correct default times and a working override."
   intake:
     original_request: "Build the first app of mtg-nic-toolbox: a tool for the MTG community in Nicaragua to generate monthly event calendars matching a reference poster layout, selecting a format (or custom event) per Fri/Sat/Sun day, each with its own repo-hosted image, plus a generic image for custom events."
     interpreted_outcome: "A static client-side web app, scaffolded as apps/calendar-generator/ in a monorepo, that lets the organizer pick a month, assign a format/custom label+image to each weekend day, and export a PNG poster matching the reference calendar layout."
@@ -65,7 +65,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/calendar-generator/"
     command: "node <skill-path>/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/calendar-generator"
 
-active_task: T027
+active_task: T029
 
 tasks:
   - id: T001
@@ -1540,7 +1540,7 @@ tasks:
   - id: T027
     type: worker
     assignee: Worker
-    status: active
+    status: done
     reasoning_hint: low
     objective: >
       Unify all poster text onto the real Beleren2016-Bold font
@@ -1582,11 +1582,27 @@ tasks:
     stop_if:
       - "Any Spanish character actually fails to render (missing glyph) despite the earlier glyph-coverage check - stop and report rather than ship broken text"
       - "Verification fails twice after a fix attempt"
-    receipt: null
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/src/render.mjs
+        - apps/calendar-generator/src/app.mjs
+      commands:
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "Headless Chromium export with full reference assignment set + accented custom label"
+          status: pass
+        - cmd: "document.fonts.check for all 4 size/weight MagicLogo combos: true; 0 console/page errors"
+          status: pass
+        - cmd: "PM personally viewed zoomed crops (Oct11, Oct25): date numbers and labels including Spanish n-tilde render correctly in Beleren style"
+          status: pass
+      summary: "Unified render.mjs to use DISPLAY_FONT_STACK for date numbers and labels, removed now-unused FONT_STACK constant. Added 54px/34px MagicLogo preloads to app.mjs. Unit test 6/6 pass. PM confirmed visually: consistent Beleren styling everywhere, accented custom label renders correctly with no missing glyphs."
+      blocked_reason: null
+      spawned_tasks: []
   - id: T028
     type: judge
     assignee: Judge
-    status: queued
+    status: done
     reasoning_hint: medium
     objective: "Audit the font unification: personally view the exported PNG (zoomed into date numbers and labels, including the accented-character test label) and confirm everything now uses the Beleren display font consistently, with no missing glyphs and no leftover generic-font text anywhere on the poster. No regression to tranches 1-11."
     inputs:
@@ -1599,11 +1615,25 @@ tasks:
       - "full_outcome_complete: true | false"
       - "missing evidence"
       - "next task if not complete"
-    receipt: null
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Personally ran grid.test.mjs: 6/6 pass. Personally viewed t027-full.png and zoomed crops: title, headers, date numbers, and labels all share identical Beleren style; n-tilde renders correctly with no missing glyph. Read render.mjs: FONT_STACK fully removed as a constant, both draw calls use DISPLAY_FONT_STACK. Read app.mjs: all 4 font size combos preloaded. No regression to tranches 1-11."
+      evidence:
+        - "node --test grid.test.mjs: 6/6 pass"
+        - "t027-full.png, t027-oct18-crop.png, t027-oct25-crop.png viewed by Judge via Read"
+        - "render.mjs and app.mjs read in full by Judge"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Set T028 status=done, decision=complete, full_outcome_complete=true."
+        - "Set goal.status=done (tranche 12 complete)."
+        - "PM to commit tranche 12 changes."
   - id: T029
     type: worker
     assignee: Worker
-    status: queued
+    status: active
     reasoning_hint: medium
     objective: >
       Add a per-day event time, with weekday-based defaults the user can

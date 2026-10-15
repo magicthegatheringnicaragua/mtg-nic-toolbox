@@ -265,15 +265,17 @@ function setupControls() {
 async function loadDisplayFont() {
   // Canvas text does not wait for webfonts to finish loading on its own -
   // an un-loaded @font-face silently falls back to the next font in the
-  // stack. Explicitly load the exact font/size pairs used for the title
-  // and column headers (see render.mjs) and await document.fonts.ready as
-  // a belt-and-suspenders fallback, before the first regenerateForSelectedMonth()
-  // canvas draw.
+  // stack. Explicitly load every exact font/size pair actually used on the
+  // poster (title, column headers, date numbers, per-day labels - see
+  // render.mjs) and await document.fonts.ready as a belt-and-suspenders
+  // fallback, before the first regenerateForSelectedMonth() canvas draw.
   if (!('fonts' in document)) return;
   try {
     await Promise.all([
       document.fonts.load('bold 92px "MagicLogo"'),
       document.fonts.load('bold 46px "MagicLogo"'),
+      document.fonts.load('bold 54px "MagicLogo"'),
+      document.fonts.load('bold 34px "MagicLogo"'),
     ]);
     await document.fonts.ready;
   } catch (err) {
