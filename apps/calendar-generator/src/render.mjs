@@ -11,13 +11,13 @@
 // numbers and per-day labels, with strokeText (black) under fillText
 // (white) to get the thick white-fill/black-stroke "poster" look from the
 // reference image. A second, licensed-with-caveats display font
-// (DISPLAY_FONT_STACK, "MagicLogo" - see
-// assets/fonts/LICENSE-NOTICE.md) is used ONLY for the two fixed,
-// always-accent-free strings: the month/year title and the
-// VIERNES/SABADO/DOMINGO column headers. That font has only basic
-// A-Z/a-z/0-9 glyphs (no Ñ/accents), so it must never be used for date
-// numbers or per-day labels, which are user-editable free text that can
-// contain accented Spanish characters.
+// (DISPLAY_FONT_STACK, "MagicLogo" - the real Beleren2016-Bold, see
+// assets/fonts/LICENSE-NOTICE.md) is used ONLY for the two fixed
+// strings: the month/year title and the VIERNES/SABADO/DOMINGO column
+// headers. Beleren2016-Bold does have full Spanish glyph coverage
+// (Ñ/ñ/accents/¿/¡), but it is intentionally kept scoped to just the
+// title/headers for this tranche - expanding it to date numbers or
+// per-day labels is a separate decision the repo owner hasn't made yet.
 
 import { getWeekendGrid, isInMonth, dateKey, WEEKDAY_LABELS, SPANISH_MONTH_NAMES } from './grid.mjs';
 

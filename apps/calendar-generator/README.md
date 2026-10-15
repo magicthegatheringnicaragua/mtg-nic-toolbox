@@ -38,13 +38,13 @@ Then open `http://localhost:8080/` in a browser.
   graphic (`flag-nicaragua.png`). Filenames and the catalog's `image` paths
   stay in sync. See `assets/images/ATTRIBUTION.md` for card-art sourcing and
   the Wizards of the Coast Fan Content Policy notice.
-- `assets/fonts/magic-the-gathering.ttf` - display font used only for the
-  poster's month/year title and VIERNES/SABADO/DOMINGO column headers (see
-  `src/render.mjs`). This font has an "all rights reserved" copyright and no
-  formal redistribution license; it is used here by the repo owner's
-  explicit, informed choice for this non-commercial community project. See
-  `assets/fonts/LICENSE-NOTICE.md` before reusing or redistributing it
-  elsewhere.
+- `assets/fonts/beleren-bold.ttf` - the real Beleren2016-Bold typeface (the
+  actual font used in Magic's branding), used only for the poster's
+  month/year title and VIERNES/SABADO/DOMINGO column headers (see
+  `src/render.mjs`). Copyright Wizards of the Coast, no formal redistribution
+  license; it is used here by the repo owner's explicit, informed choice for
+  this non-commercial community project. See `assets/fonts/LICENSE-NOTICE.md`
+  before reusing or redistributing it elsewhere.
 
 ## Catalog
 

@@ -7,12 +7,12 @@ goal:
   title: "Calendar Generator (mtg-nic-toolbox)"
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
-  tranche: "Tranche 6 (design-polish backlog): make the logo's background transparent (apps/calendar-generator/assets/images/flag-nicaragua.png) so it blends into the poster's own striped background instead of showing a visible rectangular box edge."
+  tranche: "Tranche 7 (design-polish backlog): swap the title/header display font from Mike Hind's 1998 lookalike to the REAL Beleren2016-Bold typeface, sourced from https://github.com/Saeris/typeface-beleren-bold (the actual font extracted from Wizards' own website, confirmed via embedded TTF metadata: 'Copyright (c) 2014-2016 Wizards of the Coast, a Hasbro Subsidiary. All rights reserved.'). This is the authentic typeface used in the current/modern Magic branding (unlike Mike Hind's font, which recreates the old pre-2015 logo and didn't visually match). User was again informed this font is Wizards' proprietary copyright with no official redistribution license - the GitHub repo's own README states 'This is not an official or authorized library! ... published for non-commercial use' - and chose to proceed for this non-commercial community project, same risk category as the prior font. Unlike Mike Hind's font, Beleren2016-Bold has full Spanish glyph coverage (confirmed: Ñ, ñ, accented vowels, ¿, ¡) so it is NOT limited to accent-free strings, but keep it scoped to title/headers only for this tranche unless the user asks to expand its use."
   status: done # active | blocked | done
   oracle:
-    signal: "Generate the October 2026 calendar at the new 2000px width, download the PNG, and visually confirm: wider columns, less art cropping, title/logo/headers still properly positioned (logo not overlapping title, headers centered in their columns), 'Store Championship (Pauper)' fits on one line, no regression to tranches 1-4 (logo, card art, background, grid/spillover, display font)."
+    signal: "Generate the October 2026 calendar, download the PNG, and visually confirm the title/headers now render in the real Beleren2016-Bold typeface (visually matching the actual logo's lettering style, not Mike Hind's lookalike), with no regression to tranches 1-6 (logo transparency, card art, background, grid/spillover, 2000px width)."
     cadence: "after each Worker package and at final audit"
-    final_proof: "Unit test still passes (grid logic untouched), a visual demo confirms the wider layout looks correct with no clipped/misaligned elements."
+    final_proof: "Unit test still passes, a visual demo confirms the swap, and LICENSE-NOTICE.md is updated to accurately credit Wizards of the Coast's 2014-2016 copyright on Beleren2016-Bold and its non-authorized/non-commercial sourcing via the Saeris GitHub repo."
   intake:
     original_request: "Build the first app of mtg-nic-toolbox: a tool for the MTG community in Nicaragua to generate monthly event calendars matching a reference poster layout, selecting a format (or custom event) per Fri/Sat/Sun day, each with its own repo-hosted image, plus a generic image for custom events."
     interpreted_outcome: "A static client-side web app, scaffolded as apps/calendar-generator/ in a monorepo, that lets the organizer pick a month, assign a format/custom label+image to each weekend day, and export a PNG poster matching the reference calendar layout."
@@ -834,6 +834,107 @@ tasks:
       required_board_updates:
         - "Set T014 status=done, decision=complete, full_outcome_complete=true."
         - "Set goal.status=done (tranche 6 complete)."
+  - id: T015
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: >
+      Swap the title/header display font from Mike Hind's lookalike to the
+      real Beleren2016-Bold, already copied to
+      apps/calendar-generator/assets/fonts/beleren-bold.ttf (sourced from
+      https://github.com/Saeris/typeface-beleren-bold; embedded TTF metadata
+      confirms "Copyright (c) 2014-2016 Wizards of the Coast, a Hasbro
+      Subsidiary. All rights reserved."). (1) Update the @font-face in
+      style.css to point at beleren-bold.ttf instead of
+      magic-the-gathering.ttf (keep font-family name "MagicLogo" so
+      render.mjs/app.mjs references don't need to change, or rename
+      consistently across all three files if clearer - PM's call either way
+      as long as it's consistent). (2) Remove the now-unused
+      magic-the-gathering.ttf file. (3) Keep the font scoped to title +
+      VIERNES/SABADO/DOMINGO headers only for this tranche (same scoping as
+      before) - do NOT expand to date numbers/labels even though
+      Beleren2016-Bold has full Spanish glyph coverage (Ñ/ñ/accents/¿/¡
+      confirmed via fontTools), since that's a separate decision the user
+      hasn't made yet. (4) Rewrite
+      apps/calendar-generator/assets/fonts/LICENSE-NOTICE.md to accurately
+      describe the NEW font: embedded copyright "Copyright (c) 2014-2016
+      Wizards of the Coast, a Hasbro Subsidiary. All rights reserved.",
+      sourced from the Saeris/typeface-beleren-bold GitHub repo (MIT license
+      covers only that repo's own CSS wrapper code, NOT the font itself -
+      the repo's own README explicitly states "This is not an official or
+      authorized library! ... published for non-commercial use" and that
+      the font remains Wizards' copyright), used here by the repo owner's
+      informed choice for this non-commercial community project. Remove or
+      clearly supersede the old Mike Hind notice so the file isn't
+      confusing. (5) Re-run the grid unit test (unaffected) and re-verify
+      visually (headless browser, reusing the Playwright+Chromium scratchpad
+      if still usable) that title/headers now render in the authentic
+      Beleren look, date numbers/labels unaffected, no console/font errors.
+      View your own exported PNG via Read before claiming success.
+    allowed_files:
+      - "apps/calendar-generator/style.css"
+      - "apps/calendar-generator/src/render.mjs"
+      - "apps/calendar-generator/assets/fonts/beleren-bold.ttf"
+      - "apps/calendar-generator/assets/fonts/magic-the-gathering.ttf"
+      - "apps/calendar-generator/assets/fonts/LICENSE-NOTICE.md"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "Visual export of October 2026: title/headers render in the real Beleren2016-Bold font; date numbers/labels unchanged; no console/page errors (incl. no font 404s)"
+    stop_if:
+      - "The @font-face swap fails to load the new font file"
+      - "Verification fails twice after a fix attempt"
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/style.css
+        - apps/calendar-generator/src/render.mjs
+        - apps/calendar-generator/assets/fonts/LICENSE-NOTICE.md
+        - apps/calendar-generator/assets/fonts/magic-the-gathering.ttf
+      commands:
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "Headless Chromium export; document.fonts.check for MagicLogo true; 0 console/page/font errors"
+          status: pass
+        - cmd: "PM personally viewed t015-exported.png: title/headers now authentically match the logo's MAGIC wordmark style"
+          status: pass
+      summary: "Swapped @font-face src from magic-the-gathering.ttf to the real beleren-bold.ttf (font-family name MagicLogo unchanged, no other code changes needed). Deleted old unused magic-the-gathering.ttf file. Rewrote LICENSE-NOTICE.md documenting Wizards' 2014-2016 copyright and the Saeris repo's non-authorized/non-commercial sourcing. Unit test 6/6 pass. PM confirmed visually: title/headers now genuinely match the logo's wordmark style, a major improvement over Mike Hind's lookalike."
+      blocked_reason: null
+      spawned_tasks: []
+  - id: T016
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit tranche 7: personally view the exported PNG and confirm title/headers now use the real Beleren2016-Bold (compare visually against apps/calendar-generator/assets/images/full-mtg-nic-logo.jpg's MAGIC wordmark - should look authentically similar, unlike the prior Mike Hind font). Confirm LICENSE-NOTICE.md accurately credits Wizards' 2014-2016 copyright and the non-authorized/non-commercial sourcing. Confirm the old magic-the-gathering.ttf is removed and no regression to tranches 1-6."
+    inputs:
+      - "T015 receipt"
+      - "apps/calendar-generator/assets/images/full-mtg-nic-logo.jpg"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if LICENSE-NOTICE.md misrepresents the font as freely licensed or omits the Wizards copyright."
+      - "Reject completion if the title font doesn't visually resemble the actual logo's MAGIC wordmark style."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Personally ran node --test grid.test.mjs: 6/6 pass. Personally viewed and compared t015-exported.png's title against full-mtg-nic-logo.jpg's MAGIC wordmark: angular pointed-serif letterforms genuinely match. Confirmed fonts/ has only beleren-bold.ttf. LICENSE-NOTICE.md accurately states Wizards' 2014-2016 copyright and non-free licensing. render.mjs confirms correct scoping. PM fixed the one flagged gap: README.md updated to reference beleren-bold.ttf instead of the deleted font."
+      evidence:
+        - "node --test apps/calendar-generator/src/grid.test.mjs: 6/6 pass"
+        - "t015-exported.png and full-mtg-nic-logo.jpg compared by Judge via Read"
+        - "LICENSE-NOTICE.md and render.mjs read in full by Judge"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Set T016 status=done, decision=complete, full_outcome_complete=true."
+        - "Set goal.status=done (tranche 7 complete)."
+        - "PM updated README.md to reference beleren-bold.ttf (was flagged as a non-blocking gap)."
+        - "PM to commit tranche 7 changes."
 checks:
   dirty_fingerprint: unknown
   last_verification:
