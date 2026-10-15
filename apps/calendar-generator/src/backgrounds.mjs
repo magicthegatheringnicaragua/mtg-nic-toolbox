@@ -9,7 +9,7 @@
 // image file under assets/backgrounds/ - no other code changes needed.
 
 export const BACKGROUNDS = [
-  { id: 'striped', name: 'Rayas Azules (default)', image: null },
+  { id: 'striped', name: 'Rayas Azules', image: null },
   {
     id: 'echoverse-reveal',
     name: 'Echoverse',
@@ -17,7 +17,7 @@ export const BACKGROUNDS = [
   },
 ];
 
-export const DEFAULT_BACKGROUND_ID = 'striped';
+export const DEFAULT_BACKGROUND_ID = 'echoverse-reveal';
 
 export function findBackground(id) {
   return BACKGROUNDS.find((entry) => entry.id === id) || null;

@@ -23,8 +23,16 @@ Then open `http://localhost:8080/` in a browser.
 - `index.html` / `style.css` - page shell and styling.
 - `src/grid.mjs` - pure week-grid math (Fri/Sat/Sun rows, adjacent-month
   spillover), covered by `src/grid.test.mjs` (`node --test src/grid.test.mjs`).
-- `src/catalog.mjs` - the flat 12-entry format/event catalog plus the
-  generic custom-event image and shared background/flag asset paths.
+- `src/catalog.mjs` - the flat 12-entry format/event catalog (id/name only,
+  set-agnostic) plus the generic custom-event image, shared flag asset
+  path, and `catalogImagePath(setId, catalogId)`, which resolves each
+  entry's artwork under the currently-selected MTG set's image folder.
+- `src/sets.mjs` - the selectable MTG set list (the "Set" picker). Each
+  entry is `{id, name}`; its artwork lives at
+  `assets/images/<id>/<catalogId>.png` for every `src/catalog.mjs` entry.
+  Adding a future set (when a new MTG set releases) is just one more entry
+  here plus one new `assets/images/<id>/` folder of 12 images - no other
+  code changes needed.
 - `src/backgrounds.mjs` - the selectable full-background gallery list (the
   "Fondo" picker). Each entry is `{id, name, image}`; `image: null` means
   "use the existing procedural `drawStripedBackground()`", otherwise it is
@@ -35,16 +43,22 @@ Then open `http://localhost:8080/` in a browser.
   flag, column headers, per-day cells). Only depends on a
   CanvasRenderingContext2D-shaped `ctx`, so it is reusable outside the
   browser (e.g. with a Node canvas polyfill) for headless verification.
-- `src/app.mjs` - DOM wiring: month/year/background pickers, per-day
-  selector UI, preloading images (catalog art plus any image-backed
-  background gallery options), scheduling re-renders, and the PNG download
-  button (`canvas.toBlob` + `URL.createObjectURL` + `<a download>`).
-- `assets/images/` - catalog art (Magic: The Gathering *Reality Fracture*
-  card art) for each catalog entry, the generic custom-event image, the
-  continuous background/filler art, and the top-right MTG Nicaragua logo
-  graphic (`flag-nicaragua.png`). Filenames and the catalog's `image` paths
-  stay in sync. See `assets/images/ATTRIBUTION.md` for card-art sourcing and
-  the Wizards of the Coast Fan Content Policy notice.
+- `src/app.mjs` - DOM wiring: month/year/background/set pickers, per-day
+  selector UI, preloading images (catalog art for the selected set plus any
+  image-backed background gallery options), reloading just the 12 catalog
+  images when the Set picker changes, scheduling re-renders, and the PNG
+  download button (`canvas.toBlob` + `URL.createObjectURL` + `<a
+  download>`).
+- `assets/images/<setId>/` - per-set catalog art (one PNG per
+  `src/catalog.mjs` entry), resolved via `catalogImagePath()`. Currently
+  just `assets/images/reality-fracture/` (Magic: The Gathering *Reality
+  Fracture* card art). See
+  `assets/images/reality-fracture/ATTRIBUTION.md` for that set's card-art
+  sourcing and the Wizards of the Coast Fan Content Policy notice.
+- `assets/images/` (top level) - assets that are NOT set-specific: the
+  generic custom-event image (`custom-event.png`), the unused legacy
+  `background.png`, the Nicaragua flag graphic (`flag-nicaragua.png`), and
+  logo source files.
 - `assets/backgrounds/` - image-backed full-background gallery options
   listed in `src/backgrounds.mjs` (currently just `echoverse-reveal.jpg`).
   See `assets/backgrounds/ATTRIBUTION.md` for sourcing.

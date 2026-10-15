@@ -7,12 +7,12 @@ goal:
   title: "Calendar Generator (mtg-nic-toolbox)"
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
-  tranche: "Tranche 9 (design-polish backlog): add a selectable full-background image gallery (striped default + one user-chosen image for now, 'Echoverse' reveal art), structured so more can be added later with just a data entry + an image file."
+  tranche: "Tranche 10: (1) Make the 12 format catalog images set-aware. Introduce a 'Set' picker (mirroring the background gallery's extensibility pattern) so each format (Moderno, Pauper, etc.) resolves its image from the currently-selected MTG set folder instead of one fixed global image. Only one set exists today (Reality Fracture - the current images, moved into assets/images/reality-fracture/); the user will request/upload a new 12-image set each time a new MTG set releases, and adding it should be just a new folder of images + one data entry, no code changes. (2) Change the background gallery's default from 'striped' (Rayas Azules) to 'echoverse-reveal' (Echoverse) - keep both options selectable, just flip which one loads by default."
   status: done # active | blocked | done
   oracle:
-    signal: "Generate the October 2026 calendar, confirm the default striped background is unchanged, and confirm selecting the new 'Echoverse' background option renders that art full-bleed (cover-fit, not stretched) with all cell art/grid/text still rendering correctly on top."
+    signal: "Generate the October 2026 calendar: (a) a Set picker exists, defaults to 'Reality Fracture', and the 12 catalog images load from assets/images/reality-fracture/ via that selection rather than a hardcoded path; (b) the background picker now defaults to 'Echoverse' on page load (not the striped pattern), while 'Rayas Azules' remains selectable. No regression to tranches 1-9 (grid/spillover, custom-label path, logo, font, card art content/facing, 2000px width, background cover-fit)."
     cadence: "after each Worker package and at final audit"
-    final_proof: "Unit test still passes, a visual demo confirms both background options render correctly, and the data structure is genuinely a one-entry-plus-one-file extension point for future additions."
+    final_proof: "Unit test still passes, a visual demo confirms the default background is now Echoverse and the Set picker correctly drives which image folder the 12 catalog entries load from, and the set data structure is genuinely a one-entry-plus-one-folder extension point (verified by checking no catalog.mjs/app.mjs code would need to change to add a second set)."
   intake:
     original_request: "Build the first app of mtg-nic-toolbox: a tool for the MTG community in Nicaragua to generate monthly event calendars matching a reference poster layout, selecting a format (or custom event) per Fri/Sat/Sun day, each with its own repo-hosted image, plus a generic image for custom events."
     interpreted_outcome: "A static client-side web app, scaffolded as apps/calendar-generator/ in a monorepo, that lets the organizer pick a month, assign a format/custom label+image to each weekend day, and export a PNG poster matching the reference calendar layout."
@@ -1277,6 +1277,171 @@ tasks:
         - "Set T022 status=done, decision=complete, full_outcome_complete=true."
         - "Set goal.status=done (tranche 8 complete)."
         - "T019/T020 (background-gallery feature) remain queued as a separate later scope."
+  - id: T023
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: >
+      Two changes. (A) Make the 12 catalog format images set-aware, mirroring
+      the extensibility pattern already used for backgrounds.mjs. (1) Create
+      src/sets.mjs: `export const SETS = [{ id: 'reality-fracture', name:
+      'Reality Fracture' }]; export const DEFAULT_SET_ID =
+      'reality-fracture'; export function findSet(id) { return
+      SETS.find((s) => s.id === id) || null; }`. (2) Move the repo's git
+      history for the 12 existing catalog PNGs from
+      apps/calendar-generator/assets/images/*.png into a new
+      apps/calendar-generator/assets/images/reality-fracture/ subfolder
+      (use `git mv` to preserve history: moderno.png, pauper.png, duel.png,
+      edh-fun.png, store-championship.png, taller-novatos.png,
+      commander-party.png, proximamente.png, standard.png, legacy.png,
+      draft.png, sealed.png). custom-event.png, flag-nicaragua.png, and
+      background.png (already unused since tranche 3) stay at the top-level
+      assets/images/ - they are NOT set-specific. Also move
+      assets/images/ATTRIBUTION.md into
+      assets/images/reality-fracture/ATTRIBUTION.md (git mv) since its
+      content is specifically about this one set's card art credits; update
+      README.md's reference to it accordingly. (3) In catalog.mjs, remove
+      the static `image` field from each CATALOG entry (keep id/name only)
+      and add `export function catalogImagePath(setId, catalogId) { return
+      \`assets/images/${setId}/${catalogId}.png\`; }`. Leave
+      CUSTOM_EVENT_IMAGE and FLAG_IMAGE exactly as they are (top-level,
+      not set-specific). (4) In app.mjs: add `selectedSetId` state
+      (default DEFAULT_SET_ID from sets.mjs). Add a `<select
+      id="set-select">` control in index.html near the month/year/background
+      pickers (label it "Set"), populated from SETS, defaulting to
+      DEFAULT_SET_ID. Refactor preloadImages() so the 12 catalog images are
+      loaded via a separate function (e.g. loadCatalogImagesForSet(setId))
+      using catalogImagePath(setId, entry.id) for each CATALOG entry,
+      returning a Map(id -> Image) that becomes resolvedImages.catalogById.
+      On set-select's change event: await loadCatalogImagesForSet(newSetId),
+      replace resolvedImages.catalogById with the result, update
+      selectedSetId, and scheduleRender() (existing day assignments keep
+      their catalogId/label; only the resolved image changes). (B) In
+      backgrounds.mjs, change DEFAULT_BACKGROUND_ID from 'striped' to
+      'echoverse-reveal', and update the 'striped' entry's name from "Rayas
+      Azules (default)" to just "Rayas Azules" (no longer accurate to call
+      it the default). Keep both background options selectable - this only
+      changes which one loads on page open. (C) Re-run the grid unit test
+      (unaffected) and re-verify visually (headless browser) that: the page
+      loads with Echoverse as the background by default (not striped), the
+      Set picker shows "Reality Fracture" selected by default, and the 12
+      format images still load/render correctly from the new
+      assets/images/reality-fracture/ path with the full reference
+      assignment set. View your own exported PNG via Read (the real
+      canvas.toBlob download, not a page screenshot) before claiming
+      success.
+    allowed_files:
+      - "apps/calendar-generator/index.html"
+      - "apps/calendar-generator/src/app.mjs"
+      - "apps/calendar-generator/src/catalog.mjs"
+      - "apps/calendar-generator/src/sets.mjs"
+      - "apps/calendar-generator/src/backgrounds.mjs"
+      - "apps/calendar-generator/README.md"
+      - "apps/calendar-generator/assets/images/reality-fracture/moderno.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/pauper.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/duel.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/edh-fun.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/store-championship.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/taller-novatos.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/commander-party.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/proximamente.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/standard.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/legacy.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/draft.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/sealed.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/ATTRIBUTION.md"
+      - "apps/calendar-generator/assets/images/moderno.png"
+      - "apps/calendar-generator/assets/images/pauper.png"
+      - "apps/calendar-generator/assets/images/duel.png"
+      - "apps/calendar-generator/assets/images/edh-fun.png"
+      - "apps/calendar-generator/assets/images/store-championship.png"
+      - "apps/calendar-generator/assets/images/taller-novatos.png"
+      - "apps/calendar-generator/assets/images/commander-party.png"
+      - "apps/calendar-generator/assets/images/proximamente.png"
+      - "apps/calendar-generator/assets/images/standard.png"
+      - "apps/calendar-generator/assets/images/legacy.png"
+      - "apps/calendar-generator/assets/images/draft.png"
+      - "apps/calendar-generator/assets/images/sealed.png"
+      - "apps/calendar-generator/assets/images/ATTRIBUTION.md"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "Visual export on page load (defaults, no user interaction): background is Echoverse, not striped"
+      - "Visual export with full reference assignment set: all 12 format images still load correctly from assets/images/reality-fracture/, Set picker shows Reality Fracture selected"
+      - "No console/page errors (including no 404s for moved image paths)"
+    stop_if:
+      - "Any image fails to load after the path restructuring (404) - fix the path, don't leave broken images"
+      - "Verification fails twice after a fix attempt"
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/src/sets.mjs
+        - apps/calendar-generator/src/catalog.mjs
+        - apps/calendar-generator/src/backgrounds.mjs
+        - apps/calendar-generator/src/app.mjs
+        - apps/calendar-generator/index.html
+        - apps/calendar-generator/README.md
+        - apps/calendar-generator/assets/images/reality-fracture/moderno.png
+        - apps/calendar-generator/assets/images/reality-fracture/pauper.png
+        - apps/calendar-generator/assets/images/reality-fracture/duel.png
+        - apps/calendar-generator/assets/images/reality-fracture/edh-fun.png
+        - apps/calendar-generator/assets/images/reality-fracture/store-championship.png
+        - apps/calendar-generator/assets/images/reality-fracture/taller-novatos.png
+        - apps/calendar-generator/assets/images/reality-fracture/commander-party.png
+        - apps/calendar-generator/assets/images/reality-fracture/proximamente.png
+        - apps/calendar-generator/assets/images/reality-fracture/standard.png
+        - apps/calendar-generator/assets/images/reality-fracture/legacy.png
+        - apps/calendar-generator/assets/images/reality-fracture/draft.png
+        - apps/calendar-generator/assets/images/reality-fracture/sealed.png
+        - apps/calendar-generator/assets/images/reality-fracture/ATTRIBUTION.md
+      commands:
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "git mv 12 catalog PNGs + ATTRIBUTION.md into reality-fracture/"
+          status: pass
+        - cmd: "Headless Chromium default page load export: Echoverse background, Reality Fracture set selected, 0 errors"
+          status: pass
+        - cmd: "Headless Chromium full reference assignment export: all 12 formats load correctly from new path, 0 errors"
+          status: pass
+        - cmd: "PM personally viewed both exported PNGs via Read"
+          status: pass
+      summary: "Created sets.mjs, moved catalog images into assets/images/reality-fracture/ via git mv, added catalogImagePath(setId, catalogId) to catalog.mjs, wired a Set picker in app.mjs/index.html that reloads catalogById on change. Flipped background default to echoverse-reveal, renamed striped entry. Unit test 6/6 pass. PM confirmed visually: default load shows Echoverse with zero interaction, all 12 formats render correctly from the new path."
+      blocked_reason: null
+      spawned_tasks: []
+  - id: T024
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit tranche 10: personally view a fresh page-load export (no interaction) and confirm Echoverse is the default background, not striped. Confirm the Set picker exists, defaults to Reality Fracture, and the 12 catalog images load correctly from assets/images/reality-fracture/ with no 404s. Confirm the set data structure (sets.mjs + catalogImagePath) is genuinely a one-entry-plus-one-folder extension point - verify by checking that adding a hypothetical second set would require zero changes to catalog.mjs or app.mjs beyond the sets.mjs list and an image folder. Confirm no regression to tranches 1-9."
+    inputs:
+      - "T023 receipt"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if the background still defaults to striped on page load."
+      - "Reject completion if any catalog image 404s after the path restructuring."
+      - "Reject completion if adding a future set would require code changes beyond sets.mjs + an image folder."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Personally ran grid.test.mjs (6/6 pass). Confirmed via t023-default.png and t023-report.json that Echoverse is default with zero interaction, zero console/page/HTTP errors. Confirmed via t023-full.png all 12 formats render correctly from the new path. Read all relevant source files: catalogImagePath is a generic template, Set picker correctly reloads images, grep confirms no hardcoded set-id logic outside sets.mjs. File layout matches spec via git mv (history preserved)."
+      evidence:
+        - "node --test grid.test.mjs: 6/6 pass"
+        - "t023-default.png, t023-full.png, t023-report.json reviewed by Judge"
+        - "sets.mjs/catalog.mjs/app.mjs/backgrounds.mjs/index.html read in full by Judge"
+        - "grep confirms set-id not hardcoded outside sets.mjs"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Set T024 status=done, decision=complete, full_outcome_complete=true."
+        - "Set goal.status=done (tranche 10 complete)."
+        - "PM to commit tranche 10 changes."
 checks:
   dirty_fingerprint: unknown
   last_verification:

@@ -5,9 +5,16 @@
 // and PNG export/download.
 
 import { getWeekendCells, dateKey, WEEKDAY_LABELS, SPANISH_MONTH_NAMES } from './grid.mjs';
-import { CATALOG, CUSTOM_EVENT_IMAGE, FLAG_IMAGE, findCatalogEntry } from './catalog.mjs';
+import {
+  CATALOG,
+  CUSTOM_EVENT_IMAGE,
+  FLAG_IMAGE,
+  findCatalogEntry,
+  catalogImagePath,
+} from './catalog.mjs';
 import { renderCalendar, buildAssignments, CANVAS_WIDTH, CANVAS_HEIGHT } from './render.mjs';
 import { BACKGROUNDS, DEFAULT_BACKGROUND_ID, findBackground } from './backgrounds.mjs';
+import { SETS, DEFAULT_SET_ID } from './sets.mjs';
 
 const DEFAULT_YEAR = 2026;
 const DEFAULT_MONTH_INDEX = 9; // October - matches the reference demo month
@@ -19,6 +26,7 @@ const selections = new Map();
 
 let resolvedImages = null; // { catalogById: Map<id, Image>, custom: Image, flag: Image, backgroundsById: Map<id, Image> }
 let selectedBackgroundId = DEFAULT_BACKGROUND_ID;
+let selectedSetId = DEFAULT_SET_ID;
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -29,14 +37,25 @@ function loadImage(src) {
   });
 }
 
-async function preloadImages() {
+/**
+ * Loads the 12 catalog format images for one MTG set (see sets.mjs),
+ * resolving each from catalogImagePath(setId, entry.id). Returns a
+ * Map<catalogId, Image>. Adding a future set is purely a data/asset
+ * change - this function needs no changes to support it.
+ */
+async function loadCatalogImagesForSet(setId) {
   const catalogEntries = await Promise.all(
-    CATALOG.map(async (entry) => [entry.id, await loadImage(entry.image)]),
+    CATALOG.map(async (entry) => [entry.id, await loadImage(catalogImagePath(setId, entry.id))]),
   );
+  return new Map(catalogEntries);
+}
+
+async function preloadImages() {
+  const catalogById = await loadCatalogImagesForSet(selectedSetId);
   // Preload every image-backed background gallery option (not just the
   // catalog art), so switching the "Fondo" selector never needs to wait on
-  // a fresh network fetch. Entries with image: null (e.g. the default
-  // striped background) have nothing to preload.
+  // a fresh network fetch. Entries with image: null (e.g. the striped
+  // background) have nothing to preload.
   const backgroundEntries = await Promise.all(
     BACKGROUNDS.filter((entry) => entry.image).map(async (entry) => [
       entry.id,
@@ -48,7 +67,7 @@ async function preloadImages() {
     loadImage(FLAG_IMAGE),
   ]);
   return {
-    catalogById: new Map(catalogEntries),
+    catalogById,
     backgroundsById: new Map(backgroundEntries),
     custom,
     flag,
@@ -63,6 +82,10 @@ function buildBackgroundOptionsHtml() {
   return BACKGROUNDS.map((entry) => `<option value="${entry.id}">${entry.name}</option>`).join(
     '',
   );
+}
+
+function buildSetOptionsHtml() {
+  return SETS.map((entry) => `<option value="${entry.id}">${entry.name}</option>`).join('');
 }
 
 function dayRowTemplate(cell) {
@@ -193,6 +216,24 @@ function setupControls() {
   backgroundSelect.addEventListener('change', () => {
     selectedBackgroundId = backgroundSelect.value;
     scheduleRender();
+  });
+
+  const setSelect = document.getElementById('set-select');
+  setSelect.innerHTML = buildSetOptionsHtml();
+  setSelect.value = DEFAULT_SET_ID;
+  selectedSetId = DEFAULT_SET_ID;
+  setSelect.addEventListener('change', async () => {
+    const newSetId = setSelect.value;
+    const status = document.getElementById('status');
+    try {
+      const catalogById = await loadCatalogImagesForSet(newSetId);
+      resolvedImages.catalogById = catalogById;
+      selectedSetId = newSetId;
+      scheduleRender();
+    } catch (err) {
+      console.error(err);
+      status.textContent = `Error cargando imagenes del set: ${err.message}`;
+    }
   });
 
   const canvas = getCanvas();
