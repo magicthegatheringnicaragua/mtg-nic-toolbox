@@ -21,7 +21,7 @@
 
 import { getWeekendGrid, isInMonth, dateKey, WEEKDAY_LABELS, SPANISH_MONTH_NAMES } from './grid.mjs';
 
-export const CANVAS_WIDTH = 1600;
+export const CANVAS_WIDTH = 2000;
 export const CANVAS_HEIGHT = 1236;
 
 const FONT_STACK = '"Arial Black", system-ui, sans-serif';
