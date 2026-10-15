@@ -7,12 +7,12 @@ goal:
   title: "Calendar Generator (mtg-nic-toolbox)"
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
-  tranche: "Tranche 13: add a per-day event time with weekday-based defaults (Friday 7:00 PM, Saturday 2:00 PM, Sunday 11:00 AM) that the user can override per day."
-  status: done # active | blocked | done
+  tranche: "Tranche 14 (user visual feedback pass): (1) Moderno and Pauper cell art crop too low, cutting off Chandra's and Jace's faces at the top - PM verified precisely via overlay analysis: change their per-image vertical crop anchor (vAnchor) from the shared default 0.15 to 0.0 so the full face/head is visible. (2) Draft (Aang) crops too much empty sky/glider strut at top - change its vAnchor to 0.35 to center better on his face. (3) Make the MTG Nicaragua logo ~20% bigger (boxW 340->408, boxH 150->180), verifying it still doesn't overlap the title text or column headers. (4) Make the VIERNES/SABADO/DOMINGO header text bigger (currently 46px). (5) Make the date-number and per-day label text bigger (currently 54px and 34px respectively), verifying the longest combined label (e.g. 'Store Championship (Pauper) • 11:00 AM') still fits/wraps legibly."
+  status: active # active | blocked | done
   oracle:
-    signal: "Generate the October 2026 calendar: Friday/Saturday/Sunday assignments default to the correct time appended to their label, and overriding a day's time control changes the rendered output accordingly. No regression to tranches 1-12."
+    signal: "Generate the October 2026 calendar: Moderno/Pauper cells show full visible faces (not cut off at top), Draft shows a better-centered Aang with less empty sky, the logo is visibly ~20% larger with no overlap into title/header text, weekday headers are visibly bigger, and date numbers/labels are visibly bigger with the longest label still legible and not clipped. No regression to tranches 1-13."
     cadence: "after each Worker package and at final audit"
-    final_proof: "Unit test still passes (including new formatTime12h coverage), a visual demo confirms correct default times and a working override."
+    final_proof: "Unit test still passes, a visual demo confirms all 5 changes look correct with no overlap/clipping issues."
   intake:
     original_request: "Build the first app of mtg-nic-toolbox: a tool for the MTG community in Nicaragua to generate monthly event calendars matching a reference poster layout, selecting a format (or custom event) per Fri/Sat/Sun day, each with its own repo-hosted image, plus a generic image for custom events."
     interpreted_outcome: "A static client-side web app, scaffolded as apps/calendar-generator/ in a monorepo, that lets the organizer pick a month, assign a format/custom label+image to each weekend day, and export a PNG poster matching the reference calendar layout."
@@ -65,7 +65,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/calendar-generator/"
     command: "node <skill-path>/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/calendar-generator"
 
-active_task: null
+active_task: T032
 
 tasks:
   - id: T001
@@ -1745,6 +1745,102 @@ tasks:
         - "Set T030 status=done, decision=complete, full_outcome_complete=true."
         - "Set goal.status=done (tranche 13 complete)."
         - "PM to commit tranche 13 changes."
+  - id: T031
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: >
+      Five visual-polish fixes from user feedback. (1) In catalog.mjs, add
+      an optional `vAnchor` field to the 'moderno' entry (value: 0) and
+      'pauper' entry (value: 0) - PM verified via precise overlay analysis
+      (computed exact crop-window math for the real 2000-width/5-row
+      canvas, then visually confirmed with red-line overlays on the actual
+      source images) that vAnchor=0 fully reveals Chandra's and Jace's faces
+      that were previously cut off at the top with the shared default 0.15.
+      Also add `vAnchor: 0.35` to the 'draft' entry (Aang) - PM verified
+      this crops less empty sky/glider-strut and centers better on his
+      face. (2) In render.mjs, import `findCatalogEntry` from './catalog.mjs'
+      and use it inside `buildAssignments()`: for catalog-kind selections,
+      look up `findCatalogEntry(selection.catalogId)?.vAnchor` and attach it
+      to the assignment object (fall back to the existing default anchor,
+      e.g. 0.15, when the entry has no vAnchor field or for custom/free-text
+      selections). In the per-day cell drawing loop in `renderCalendar()`,
+      use `assignment.vAnchor` instead of the current hardcoded constant
+      when calling drawCover() for the per-day art (leave the background
+      image draw's vAnchor=0.5 untouched - this only affects per-day catalog
+      art). (3) Increase the MTG Nicaragua logo size by ~20%: change boxW
+      from 340 to 408 and boxH from 150 to 180 in the flag/logo drawContain
+      call. Verify visually it does not overlap the "OCTUBRE 2026" title
+      text or the VIERNES/SABADO/DOMINGO column headers - if it does
+      overlap even slightly, nudge boxY and/or boxH down just enough to
+      clear it (small adjustment, keep the ~20% size increase as the
+      primary goal). (4) Increase the column header font size (currently
+      `bold 46px`) to something visibly bigger, e.g. 56px - verify it still
+      fits each column's width without the three header words colliding or
+      overflowing their column, and doesn't collide vertically with the
+      title above or date numbers below. (5) Increase the date-number font
+      (currently `bold 54px`) and label font (currently `bold 34px`) to
+      something visibly bigger, e.g. 62px and 40px respectively - verify
+      with the full reference assignment set AND specifically the longest
+      combined label case ("Store Championship (Pauper) • 11:00 AM" on Oct
+      18) that it still fits on one or two wrapped lines legibly, not
+      clipped or overflowing the cell. Adjust the chosen font sizes down
+      slightly if the longest label doesn't fit well - legibility and no
+      clipping matter more than hitting an exact pixel target. Re-run the
+      grid unit test (unaffected) and re-verify visually (headless browser,
+      reuse the Playwright+Chromium scratchpad at
+      /private/tmp/claude-502/-Users-Carlos-Documents-Carlos-mtg-nic-toolbox/8d8b2788-d477-4b76-9bf6-fad9e3125cb3/scratchpad/pw-verify/
+      if still usable) with the full reference assignment set that all 5
+      changes look correct: Moderno/Pauper show full faces, Draft is
+      better-centered, the logo is visibly bigger with no overlap, headers
+      are bigger, and date numbers/labels are bigger with the longest label
+      still legible. View your own exported PNG via Read, zoomed into the
+      logo and into the longest-label cell, before claiming success.
+    allowed_files:
+      - "apps/calendar-generator/src/catalog.mjs"
+      - "apps/calendar-generator/src/render.mjs"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "Visual export: Moderno/Pauper show full faces not cut off at top; Draft is better-centered with less empty sky; logo is visibly ~20% bigger with no overlap into title/headers; weekday headers are visibly bigger; date numbers/labels are visibly bigger with the longest label ('Store Championship (Pauper) • 11:00 AM') still legible and not clipped"
+      - "No console/page errors"
+    stop_if:
+      - "The bigger logo or bigger fonts cause an unavoidable overlap/clipping even after reasonable size reduction - stop and report the specific conflict rather than shipping a broken layout"
+      - "Verification fails twice after a fix attempt"
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/src/catalog.mjs
+        - apps/calendar-generator/src/render.mjs
+      commands:
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "Headless Chromium export with full reference assignment set"
+          status: pass
+        - cmd: "0 console/page errors; document.fonts.check confirms new sizes already resolve (font resource loaded regardless of preload size parameter)"
+          status: pass
+        - cmd: "PM personally viewed t031-full.png, t031-logo-zoom.png, t031-oct18-zoom.png: all 5 fixes confirmed - full faces, better-centered Aang, bigger logo with no overlap, bigger headers, bigger text with longest label wrapping cleanly"
+          status: pass
+      summary: "Added vAnchor to moderno/pauper (0) and draft (0.35) in catalog.mjs, wired through render.mjs's buildAssignments and per-day drawCover call. Grew logo box 340x150->408x180 (boxY 10->0 to clear headers). Bumped header/date/label fonts to 56/62/40px with spacing adjustments. Unit test 7/7 pass. PM confirmed visually: all 5 feedback items resolved correctly, no overlap or clipping anywhere."
+      blocked_reason: null
+      spawned_tasks: []
+  - id: T032
+    type: judge
+    assignee: Judge
+    status: active
+    reasoning_hint: high
+    objective: "Audit all 5 visual-polish fixes: personally view the exported PNG zoomed into Moderno, Pauper, Draft, the logo, and the longest-label cell. Confirm faces are now fully visible for Moderno/Pauper, Draft looks better-centered, the logo is noticeably bigger (~20%) with no overlap, headers are noticeably bigger, and date numbers/labels are noticeably bigger with no clipping/overflow anywhere. No regression to tranches 1-13."
+    inputs:
+      - "T031 receipt"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if any face is still cut off, if the logo overlaps other text, or if any text is clipped/overflowing."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt: null
 checks:
   dirty_fingerprint: unknown
   last_verification:

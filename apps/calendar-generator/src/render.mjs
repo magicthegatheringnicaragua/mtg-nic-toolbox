@@ -20,6 +20,7 @@
 // on as the fallback portion of DISPLAY_FONT_STACK's own stack string.
 
 import { getWeekendGrid, isInMonth, dateKey, WEEKDAY_LABELS, SPANISH_MONTH_NAMES } from './grid.mjs';
+import { findCatalogEntry } from './catalog.mjs';
 
 export const CANVAS_WIDTH = 2000;
 export const CANVAS_HEIGHT = 1236;
@@ -34,6 +35,12 @@ const GRID_TOP = TITLE_AREA_HEIGHT + HEADER_HEIGHT;
 const GRID_MARGIN_X = 24;
 const GRID_BOTTOM_MARGIN = 16;
 const COLUMN_COUNT = 3;
+
+// Shared default vertical-crop anchor for drawCover() (see its own doc
+// comment below) - kept as a named constant so buildAssignments() can fall
+// back to the same value catalog entries implicitly use when they don't
+// define their own `vAnchor` (see catalog.mjs).
+const DEFAULT_V_ANCHOR = 0.15;
 
 function outlinedText(ctx, text, x, y, { font, strokeWidth = 8, align = 'left', baseline = 'alphabetic' }) {
   ctx.font = font;
@@ -124,12 +131,17 @@ export function renderCalendar(ctx, { year, monthIndex, assignments, images, bac
   // to stay within the title bar (height 170px) so it never overlaps the
   // "OCTUBRE 2026" title text, which starts at y=110.
   if (images.flag) {
-    const boxW = 340;
-    // Clamped so boxY + boxH stays comfortably inside TITLE_AREA_HEIGHT
-    // (170px), leaving a bottom margin below the box.
-    const boxH = 150;
+    // ~20% bigger than the original 340x150 box (per user feedback), still
+    // kept clear of the title text and the column headers below it (see
+    // boxY comment).
+    const boxW = 408;
+    // boxY nudged up slightly (from the original 10) to compensate for the
+    // taller box so the actual contained-fit image (bound by boxW, since
+    // the logo's aspect ratio is wider than the box) still clears the
+    // VIERNES/SABADO/DOMINGO header row beneath it.
+    const boxH = 180;
     const boxX = CANVAS_WIDTH - boxW - GRID_MARGIN_X;
-    const boxY = 10;
+    const boxY = 0;
     drawContain(ctx, images.flag, boxX, boxY, boxW, boxH);
   }
 
@@ -139,9 +151,9 @@ export function renderCalendar(ctx, { year, monthIndex, assignments, images, bac
   const columnWidth = gridWidth / COLUMN_COUNT;
   WEEKDAY_LABELS.forEach((label, i) => {
     const cx = GRID_MARGIN_X + columnWidth * i + columnWidth / 2;
-    outlinedText(ctx, label, cx, TITLE_AREA_HEIGHT + 52, {
-      font: `bold 46px ${DISPLAY_FONT_STACK}`,
-      strokeWidth: 7,
+    outlinedText(ctx, label, cx, TITLE_AREA_HEIGHT + 58, {
+      font: `bold 56px ${DISPLAY_FONT_STACK}`,
+      strokeWidth: 8,
       align: 'center',
       baseline: 'alphabetic',
     });
@@ -166,7 +178,7 @@ export function renderCalendar(ctx, { year, monthIndex, assignments, images, bac
         ctx.beginPath();
         ctx.rect(cellX, cellY, columnWidth, rowHeight);
         ctx.clip();
-        drawCover(ctx, assignment.image, cellX, cellY, columnWidth, rowHeight);
+        drawCover(ctx, assignment.image, cellX, cellY, columnWidth, rowHeight, assignment.vAnchor);
         ctx.restore();
       }
 
@@ -180,23 +192,23 @@ export function renderCalendar(ctx, { year, monthIndex, assignments, images, bac
       if (assignment) {
         // Date number, top-left of the cell.
         const dayNumber = String(date.getDate());
-        outlinedText(ctx, dayNumber, cellX + 14, cellY + 54, {
-          font: `bold 54px ${DISPLAY_FONT_STACK}`,
-          strokeWidth: 8,
+        outlinedText(ctx, dayNumber, cellX + 14, cellY + 60, {
+          font: `bold 62px ${DISPLAY_FONT_STACK}`,
+          strokeWidth: 9,
           align: 'left',
           baseline: 'alphabetic',
         });
 
         // Label, wrapped to fit the cell, anchored near the bottom.
-        const labelFont = `bold 34px ${DISPLAY_FONT_STACK}`;
+        const labelFont = `bold 40px ${DISPLAY_FONT_STACK}`;
         const maxWidth = columnWidth - 28;
         const lines = wrapText(ctx, assignment.label || '', maxWidth, labelFont);
-        const lineHeight = 40;
+        const lineHeight = 46;
         const startY = cellY + rowHeight - 18 - (lines.length - 1) * lineHeight;
         lines.forEach((line, li) => {
           outlinedText(ctx, line, cellX + columnWidth / 2, startY + li * lineHeight, {
             font: labelFont,
-            strokeWidth: 6,
+            strokeWidth: 7,
             align: 'center',
             baseline: 'alphabetic',
           });
@@ -285,7 +297,7 @@ function drawContain(ctx, image, x, y, w, h) {
  * with differently-composed art (e.g. full-bleed background images) can
  * pass a different anchor. Horizontal centering is unchanged.
  */
-function drawCover(ctx, image, x, y, w, h, vAnchor = 0.15) {
+function drawCover(ctx, image, x, y, w, h, vAnchor = DEFAULT_V_ANCHOR) {
   const imgW = image.naturalWidth || image.width;
   const imgH = image.naturalHeight || image.height;
   if (!imgW || !imgH) {
@@ -336,7 +348,15 @@ export function buildAssignments(selections, resolvedImages) {
     const label = selection.time
       ? `${selection.label} • ${formatTime12h(selection.time)}`
       : selection.label;
-    assignments.set(key, { label, image });
+    // Per-entry vertical-crop anchor override (see catalog.mjs's `vAnchor`
+    // field and drawCover()'s doc comment). Falls back to the shared
+    // default for custom/free-text selections (no catalog entry to look up)
+    // and for catalog entries that don't define their own override.
+    const vAnchor =
+      selection.kind === 'catalog'
+        ? findCatalogEntry(selection.catalogId)?.vAnchor ?? DEFAULT_V_ANCHOR
+        : DEFAULT_V_ANCHOR;
+    assignments.set(key, { label, image, vAnchor });
   }
   return assignments;
 }

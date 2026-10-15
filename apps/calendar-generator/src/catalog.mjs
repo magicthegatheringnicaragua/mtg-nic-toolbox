@@ -13,9 +13,18 @@
 // change: a new entry in sets.mjs plus a new assets/images/<setId>/ folder
 // with one PNG per catalog id, no catalog.mjs/app.mjs code changes needed.
 
+// `vAnchor` (optional) overrides drawCover()'s default vertical-crop anchor
+// (see render.mjs) for entries whose source art is composed differently
+// than the shared default assumes. PM verified these via precise overlay
+// analysis against the actual source images:
+// - moderno (Chandra) / pauper (Jace): default 0.15 still cut off the top
+//   of the face; vAnchor 0 fully reveals it.
+// - draft (Aang): default 0.15 showed too much empty sky/glider strut above
+//   him; vAnchor 0.35 centers better on his face.
+// Entries without a `vAnchor` field keep using drawCover()'s default.
 export const CATALOG = [
-  { id: 'moderno', name: 'Moderno' },
-  { id: 'pauper', name: 'Pauper' },
+  { id: 'moderno', name: 'Moderno', vAnchor: 0 },
+  { id: 'pauper', name: 'Pauper', vAnchor: 0 },
   { id: 'duel', name: 'Duel' },
   { id: 'edh-fun', name: 'EDH Fun' },
   { id: 'store-championship', name: 'Store Championship' },
@@ -24,7 +33,7 @@ export const CATALOG = [
   { id: 'proximamente', name: 'Proximamente' },
   { id: 'standard', name: 'Standard' },
   { id: 'legacy', name: 'Legacy' },
-  { id: 'draft', name: 'Draft' },
+  { id: 'draft', name: 'Draft', vAnchor: 0.35 },
   { id: 'sealed', name: 'Sealed' },
 ];
 
