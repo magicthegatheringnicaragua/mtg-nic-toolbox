@@ -8,7 +8,7 @@ goal:
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
   tranche: "Tranche 6 (design-polish backlog): make the logo's background transparent (apps/calendar-generator/assets/images/flag-nicaragua.png) so it blends into the poster's own striped background instead of showing a visible rectangular box edge."
-  status: active # active | blocked | done
+  status: done # active | blocked | done
   oracle:
     signal: "Generate the October 2026 calendar at the new 2000px width, download the PNG, and visually confirm: wider columns, less art cropping, title/logo/headers still properly positioned (logo not overlapping title, headers centered in their columns), 'Store Championship (Pauper)' fits on one line, no regression to tranches 1-4 (logo, card art, background, grid/spillover, display font)."
     cadence: "after each Worker package and at final audit"
@@ -65,7 +65,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/calendar-generator/"
     command: "node <skill-path>/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/calendar-generator"
 
-active_task: T013
+active_task: null
 
 tasks:
   - id: T001
@@ -755,7 +755,7 @@ tasks:
   - id: T013
     type: worker
     assignee: Worker
-    status: active
+    status: done
     reasoning_hint: low
     objective: >
       Make apps/calendar-generator/assets/images/flag-nicaragua.png (the
@@ -788,11 +788,26 @@ tasks:
     stop_if:
       - "The color-key approach leaves unacceptable artifacts (e.g. eats into the white text/flower, or leaves a large opaque blue halo) - try adjusting the hue/saturation thresholds once; if still bad after one retry, stop and report rather than shipping a visibly broken cutout"
       - "Verification fails twice after a fix attempt"
-    receipt: null
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/assets/images/flag-nicaragua.png
+      commands:
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "Color-key cutout (HSV hue 190-250deg, sat>0.25 -> alpha=0), 82.5% pixels transparent, foreground preserved"
+          status: pass
+        - cmd: "Headless Chromium export + 0 console/page errors"
+          status: pass
+        - cmd: "PM personally viewed logo crop: seamless blend into striped background, no box edge, fully legible"
+          status: pass
+      summary: "Converted flag-nicaragua.png to a transparent cutout via HSV color-keying (blue background removed, flower/text/circle preserved). Verified visually: logo now blends seamlessly into the poster's striped background with no visible box edge."
+      blocked_reason: null
+      spawned_tasks: []
   - id: T014
     type: judge
     assignee: Judge
-    status: queued
+    status: done
     reasoning_hint: medium
     objective: "Audit the logo transparency change: personally view the exported PNG and confirm the logo blends into the background with no visible box edge, no unacceptable artifacts (color halo, eaten-into text/flower details), and the logo remains clearly legible. Confirm no regression to tranches 1-5."
     inputs:
@@ -805,7 +820,20 @@ tasks:
       - "full_outcome_complete: true | false"
       - "missing evidence"
       - "next task if not complete"
-    receipt: null
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Personally ran node --test grid.test.mjs: 6/6 pass. Personally viewed t013-exported.png and t013-logo-crop.png: logo blends seamlessly into the striped background, no box edge, no color halo, flower/circle/text fully legible. No regressions to tranches 1-5."
+      evidence:
+        - "node --test apps/calendar-generator/src/grid.test.mjs: 6/6 pass"
+        - "t013-exported.png and t013-logo-crop.png viewed by Judge via Read"
+        - "render.mjs grepped: drawContain/drawStripedBackground/CANVAS_WIDTH unchanged"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Set T014 status=done, decision=complete, full_outcome_complete=true."
+        - "Set goal.status=done (tranche 6 complete)."
 checks:
   dirty_fingerprint: unknown
   last_verification:
