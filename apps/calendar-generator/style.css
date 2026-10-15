@@ -74,13 +74,27 @@ main {
 
 select,
 input[type="number"],
-input[type="text"] {
+input[type="text"],
+input[type="time"] {
   background: #0f151b;
   color: var(--text);
   border: 1px solid #2c3842;
   border-radius: 6px;
   padding: 0.4rem 0.5rem;
   font-size: 0.9rem;
+}
+
+input[type="time"]:disabled,
+input[type="text"]:disabled {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.day-time {
+  align-self: flex-start;
+  width: auto;
+  min-width: 8.5rem;
+  color-scheme: dark;
 }
 
 .status {

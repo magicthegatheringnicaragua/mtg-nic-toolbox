@@ -8,6 +8,7 @@ import {
   isInMonth,
   dateKey,
 } from './grid.mjs';
+import { formatTime12h } from './render.mjs';
 
 function iso(date) {
   return dateKey(date);
@@ -122,4 +123,13 @@ test('getWeekendGrid works for a month where the first Friday is late (forces sp
 test('dateKey formats using the date\'s own calendar date (stable across spillover)', () => {
   const d = new Date(2026, 10, 1); // Nov 1 2026
   assert.equal(dateKey(d), '2026-11-01');
+});
+
+test('formatTime12h converts 24h HH:MM strings to 12h H:MM AM/PM display strings', () => {
+  assert.equal(formatTime12h('19:00'), '7:00 PM');
+  assert.equal(formatTime12h('14:00'), '2:00 PM');
+  assert.equal(formatTime12h('11:00'), '11:00 AM');
+  assert.equal(formatTime12h('00:00'), '12:00 AM');
+  assert.equal(formatTime12h('12:00'), '12:00 PM');
+  assert.equal(formatTime12h('01:05'), '1:05 AM');
 });

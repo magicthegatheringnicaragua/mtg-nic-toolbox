@@ -301,10 +301,27 @@ function drawCover(ctx, image, x, y, w, h, vAnchor = 0.15) {
 }
 
 /**
+ * Converts a 24-hour "HH:MM" time string (the native value format of
+ * <input type="time">) into a 12-hour "H:MM AM/PM" display string, e.g.
+ * "19:00" -> "7:00 PM", "00:00" -> "12:00 AM", "12:00" -> "12:00 PM".
+ *
+ * @param {string} time24h
+ * @returns {string}
+ */
+export function formatTime12h(time24h) {
+  const [hoursStr, minutesStr] = String(time24h).split(':');
+  const hours24 = Number(hoursStr);
+  const minutes = String(minutesStr).padStart(2, '0');
+  const period = hours24 >= 12 ? 'PM' : 'AM';
+  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  return `${hours12}:${minutes} ${period}`;
+}
+
+/**
  * Builds the `assignments` Map expected by renderCalendar() from a plain
  * per-day selection map, resolving each entry's drawable image.
  *
- * @param {Map<string, {kind: 'catalog'|'custom', catalogId?: string, label: string}>} selections
+ * @param {Map<string, {kind: 'catalog'|'custom', catalogId?: string, label: string, time?: string}>} selections
  * @param {object} resolvedImages
  * @param {Map<string, any>} resolvedImages.catalogById
  * @param {any} resolvedImages.custom
@@ -316,7 +333,10 @@ export function buildAssignments(selections, resolvedImages) {
       selection.kind === 'catalog'
         ? resolvedImages.catalogById.get(selection.catalogId)
         : resolvedImages.custom;
-    assignments.set(key, { label: selection.label, image });
+    const label = selection.time
+      ? `${selection.label} • ${formatTime12h(selection.time)}`
+      : selection.label;
+    assignments.set(key, { label, image });
   }
   return assignments;
 }

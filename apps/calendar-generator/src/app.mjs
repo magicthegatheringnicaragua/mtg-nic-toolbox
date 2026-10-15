@@ -21,7 +21,12 @@ const DEFAULT_MONTH_INDEX = 9; // October - matches the reference demo month
 
 const COLUMN_LABEL = { friday: 'VIERNES', saturday: 'SABADO', sunday: 'DOMINGO' };
 
-/** selections: dateKey -> { kind: 'catalog' | 'custom', catalogId?: string, label: string } */
+// Weekday-based default event start times (24h HH:MM, matching
+// <input type="time">'s native value format). Used to seed the per-day
+// time control when a day transitions from unassigned to assigned.
+const DEFAULT_TIMES = { friday: '19:00', saturday: '14:00', sunday: '11:00' };
+
+/** selections: dateKey -> { kind: 'catalog' | 'custom', catalogId?: string, label: string, time?: string } */
 const selections = new Map();
 
 let resolvedImages = null; // { catalogById: Map<id, Image>, custom: Image, flag: Image, backgroundsById: Map<id, Image> }
@@ -104,6 +109,7 @@ function dayRowTemplate(cell) {
         <option value="custom">Personalizado...</option>
       </select>
       <input type="text" class="day-label" placeholder="Etiqueta" disabled />
+      <input type="time" class="day-time" value="${DEFAULT_TIMES[cell.column]}" disabled />
     </div>
   `;
 }
@@ -112,27 +118,48 @@ function renderDayRows(year, monthIndex) {
   const container = document.getElementById('days-list');
   const cells = getWeekendCells(year, monthIndex);
   container.innerHTML = cells.map(dayRowTemplate).join('');
+  const columnByKey = new Map(cells.map((cell) => [dateKey(cell.date), cell.column]));
 
   container.querySelectorAll('.day-row').forEach((rowEl) => {
     const key = rowEl.dataset.key;
     const select = rowEl.querySelector('.day-select');
     const labelInput = rowEl.querySelector('.day-label');
+    const timeInput = rowEl.querySelector('.day-time');
+    const defaultTime = DEFAULT_TIMES[columnByKey.get(key)];
 
     select.addEventListener('change', () => {
       const value = select.value;
+      const previous = selections.get(key);
+      const wasAssigned = Boolean(previous);
+      // Preserve a user-set time across a format change while the day stays
+      // assigned; only the unassigned -> assigned transition (below) seeds
+      // the weekday default.
+      const carriedTime = wasAssigned ? previous.time : undefined;
       if (!value) {
         selections.delete(key);
         labelInput.value = '';
         labelInput.disabled = true;
+        timeInput.value = defaultTime;
+        timeInput.disabled = true;
       } else if (value === 'custom') {
         labelInput.disabled = false;
         labelInput.value = labelInput.value || '';
-        selections.set(key, { kind: 'custom', label: labelInput.value });
+        selections.set(key, { kind: 'custom', label: labelInput.value, time: carriedTime });
       } else {
         const entry = findCatalogEntry(value);
         labelInput.disabled = false;
         labelInput.value = entry.name;
-        selections.set(key, { kind: 'catalog', catalogId: value, label: entry.name });
+        selections.set(key, { kind: 'catalog', catalogId: value, label: entry.name, time: carriedTime });
+      }
+      // Only initialize the time on the unassigned -> assigned transition;
+      // changing the format while the day stays assigned must not reset a
+      // user-overridden time.
+      if (value && !wasAssigned) {
+        timeInput.value = defaultTime;
+        timeInput.disabled = false;
+        selections.get(key).time = defaultTime;
+      } else if (value) {
+        timeInput.disabled = false;
       }
       scheduleRender();
     });
@@ -141,6 +168,14 @@ function renderDayRows(year, monthIndex) {
       const current = selections.get(key);
       if (current) {
         current.label = labelInput.value;
+        scheduleRender();
+      }
+    });
+
+    timeInput.addEventListener('change', () => {
+      const current = selections.get(key);
+      if (current) {
+        current.time = timeInput.value;
         scheduleRender();
       }
     });

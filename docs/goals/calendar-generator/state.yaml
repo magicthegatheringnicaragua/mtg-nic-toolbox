@@ -8,7 +8,7 @@ goal:
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
   tranche: "Tranche 13: add a per-day event time with weekday-based defaults (Friday 7:00 PM, Saturday 2:00 PM, Sunday 11:00 AM) that the user can override per day."
-  status: active # active | blocked | done
+  status: done # active | blocked | done
   oracle:
     signal: "Generate the October 2026 calendar: Friday/Saturday/Sunday assignments default to the correct time appended to their label, and overriding a day's time control changes the rendered output accordingly. No regression to tranches 1-12."
     cadence: "after each Worker package and at final audit"
@@ -65,7 +65,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/calendar-generator/"
     command: "node <skill-path>/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/calendar-generator"
 
-active_task: T029
+active_task: null
 
 tasks:
   - id: T001
@@ -1633,7 +1633,7 @@ tasks:
   - id: T029
     type: worker
     assignee: Worker
-    status: active
+    status: done
     reasoning_hint: medium
     objective: >
       Add a per-day event time, with weekday-based defaults the user can
@@ -1693,11 +1693,29 @@ tasks:
       - "No console/page errors"
     stop_if:
       - "Verification fails twice after a fix attempt"
-    receipt: null
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/src/app.mjs
+        - apps/calendar-generator/src/render.mjs
+        - apps/calendar-generator/src/grid.test.mjs
+        - apps/calendar-generator/style.css
+      commands:
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "Headless Chromium export with full reference assignment set: Fri=7:00 PM, Sat=2:00 PM, Sun=11:00 AM defaults all correct"
+          status: pass
+        - cmd: "Headless Chromium override test: Oct16 Duel set to 20:30 renders as 8:30 PM"
+          status: pass
+        - cmd: "PM independently re-verified the accented custom label with the real ene-tilde character typed via Playwright fill(): renders correctly as 'Torneo de Ano Nuevo' with full tilde, confirming the Worker's own test script had a typo (missing tilde in its literal test string), not a real rendering bug"
+          status: pass
+      summary: "Added DEFAULT_TIMES map, a .day-time input per day row with assign-transition-only default initialization, formatTime12h() + label composition in render.mjs, and 6 new unit tests. Unit test 7/7 pass. PM confirmed visually: correct default times per weekday, working override, and independently re-confirmed accented-character labels still render correctly (the Worker's test script output showed 'Ano' due to a typo in its own test input string, not an actual glyph bug)."
+      blocked_reason: null
+      spawned_tasks: []
   - id: T030
     type: judge
     assignee: Judge
-    status: queued
+    status: done
     reasoning_hint: high
     objective: "Audit the per-day time feature: personally view the exported PNG and confirm each populated cell shows the correct time (Friday 7:00 PM, Saturday 2:00 PM, Sunday 11:00 AM by default) appended to its label, legible and not causing awkward wrapping/overflow. Confirm the default-only-on-first-assignment behavior and the override path are correctly implemented by reading app.mjs. Confirm formatTime12h's unit tests pass and cover the edge cases (midnight, noon, zero-padded minutes). No regression to tranches 1-11."
     inputs:
@@ -1711,7 +1729,22 @@ tasks:
       - "full_outcome_complete: true | false"
       - "missing evidence"
       - "next task if not complete"
-    receipt: null
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Personally ran grid.test.mjs: 7/7 pass, including formatTime12h edge cases. Personally viewed both exports: Fri/Sat/Sun defaults correct and legible, override renders correctly, longest label fits with no clipping. Read app.mjs: transition logic correctly initializes default only once, preserves overrides, resets on clear. Read render.mjs: composition logic correct. Scope matches exactly. No regression."
+      evidence:
+        - "node --test grid.test.mjs: 7/7 pass"
+        - "t029-defaults.png and t029-override.png viewed by Judge via Read"
+        - "app.mjs and render.mjs read in full by Judge"
+        - "git diff confirms scope matches allowed_files exactly"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Set T030 status=done, decision=complete, full_outcome_complete=true."
+        - "Set goal.status=done (tranche 13 complete)."
+        - "PM to commit tranche 13 changes."
 checks:
   dirty_fingerprint: unknown
   last_verification:
