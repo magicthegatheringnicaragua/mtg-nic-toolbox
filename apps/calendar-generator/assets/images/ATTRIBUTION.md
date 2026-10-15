@@ -15,22 +15,33 @@ Gathering community in Nicaragua.
 
 ## Card used per catalog slug
 
-| Slug | Card |
-| --- | --- |
-| moderno | Chandra, Torch of Defiance |
-| pauper | Loyal Tutor |
-| duel | Aerid Konstrari |
-| edh-fun | Avatar of Burgeoning Echoes |
-| store-championship | Garruk, Curse Breaker |
-| taller-novatos | Kwia Vigorbloom |
-| commander-party | Emrakul, the Exigent Doom |
-| proximamente | Darklight Phoenix |
-| standard | Ajani Resolute |
-| legacy | Garruk, Veiled Butcher |
-| draft | Ingris Stingerquill |
-| sealed | Craterclaw Colossus |
-| custom-event | Codie, Ravenous Codex |
-| background | Gardenize |
+These are now iconic, recognizable Magic characters (classic Planeswalkers
+plus Emrakul and Fblthp) chosen for name/face recognition over the earlier
+Reality Fracture-only creature selections. Some images were horizontally
+flipped (left-right mirrored) from their original card-art orientation for
+compositional reasons: the layout places Viernes-column formats (Moderno,
+Pauper, Duel, Standard, Legacy) on the left side of the poster and
+Domingo-column formats (EDH Fun, Store Championship, Commander Party,
+Proximamente) on the right side, and flipping lets same-row pairs appear to
+face/look at each other across the gap, matching the original reference
+calendar's composition.
+
+| Slug | Card | Flipped? |
+| --- | --- | --- |
+| moderno | Chandra, Torch of Defiance | no |
+| pauper | Jace, Reality Sculptor | no |
+| duel | Gideon the Oathless | no |
+| standard | Ajani Resolute | no |
+| legacy | Garruk, Veiled Butcher | yes |
+| edh-fun | Kiora of Salt and Sand | yes |
+| store-championship | Garruk, Curse Breaker | yes |
+| commander-party | Emrakul, the Exigent Doom | no |
+| proximamente | Liliana the Repentant | no |
+| taller-novatos | Lyra, Archangel of Dawn | no |
+| draft | Karn, Argent Defender | no |
+| sealed | Koth, the Geomancer | no |
+| custom-event | Fblthp, Impossibly Lost | no |
+| background | Gardenize | no (unchanged from the prior tranche) |
 
 The top-right poster graphic (`flag-nicaragua.png`) is the MTG Nicaragua
 community logo, provided directly by the organizer, not card art, and is not

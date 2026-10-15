@@ -7,12 +7,12 @@ goal:
   title: "Calendar Generator (mtg-nic-toolbox)"
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
-  tranche: "Tranche 7 (design-polish backlog): swap the title/header display font from Mike Hind's 1998 lookalike to the REAL Beleren2016-Bold typeface, sourced from https://github.com/Saeris/typeface-beleren-bold (the actual font extracted from Wizards' own website, confirmed via embedded TTF metadata: 'Copyright (c) 2014-2016 Wizards of the Coast, a Hasbro Subsidiary. All rights reserved.'). This is the authentic typeface used in the current/modern Magic branding (unlike Mike Hind's font, which recreates the old pre-2015 logo and didn't visually match). User was again informed this font is Wizards' proprietary copyright with no official redistribution license - the GitHub repo's own README states 'This is not an official or authorized library! ... published for non-commercial use' - and chose to proceed for this non-commercial community project, same risk category as the prior font. Unlike Mike Hind's font, Beleren2016-Bold has full Spanish glyph coverage (confirmed: Ñ, ñ, accented vowels, ¿, ¡) so it is NOT limited to accent-free strings, but keep it scoped to title/headers only for this tranche unless the user asks to expand its use."
-  status: done # active | blocked | done
+  tranche: "Tranche 9 (design-polish backlog): add a selectable full-background image gallery (striped default + one user-chosen image for now, 'Echoverse' reveal art), structured so more can be added later with just a data entry + an image file."
+  status: active # active | blocked | done
   oracle:
-    signal: "Generate the October 2026 calendar, download the PNG, and visually confirm the title/headers now render in the real Beleren2016-Bold typeface (visually matching the actual logo's lettering style, not Mike Hind's lookalike), with no regression to tranches 1-6 (logo transparency, card art, background, grid/spillover, 2000px width)."
+    signal: "Generate the October 2026 calendar, confirm the default striped background is unchanged, and confirm selecting the new 'Echoverse' background option renders that art full-bleed (cover-fit, not stretched) with all cell art/grid/text still rendering correctly on top."
     cadence: "after each Worker package and at final audit"
-    final_proof: "Unit test still passes, a visual demo confirms the swap, and LICENSE-NOTICE.md is updated to accurately credit Wizards of the Coast's 2014-2016 copyright on Beleren2016-Bold and its non-authorized/non-commercial sourcing via the Saeris GitHub repo."
+    final_proof: "Unit test still passes, a visual demo confirms both background options render correctly, and the data structure is genuinely a one-entry-plus-one-file extension point for future additions."
   intake:
     original_request: "Build the first app of mtg-nic-toolbox: a tool for the MTG community in Nicaragua to generate monthly event calendars matching a reference poster layout, selecting a format (or custom event) per Fri/Sat/Sun day, each with its own repo-hosted image, plus a generic image for custom events."
     interpreted_outcome: "A static client-side web app, scaffolded as apps/calendar-generator/ in a monorepo, that lets the organizer pick a month, assign a format/custom label+image to each weekend day, and export a PNG poster matching the reference calendar layout."
@@ -65,7 +65,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/calendar-generator/"
     command: "node <skill-path>/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/calendar-generator"
 
-active_task: null
+active_task: T019
 
 tasks:
   - id: T001
@@ -935,6 +935,315 @@ tasks:
         - "Set goal.status=done (tranche 7 complete)."
         - "PM updated README.md to reference beleren-bold.ttf (was flagged as a non-blocking gap)."
         - "PM to commit tranche 7 changes."
+  - id: T017
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: >
+      (1) In apps/calendar-generator/src/render.mjs's drawCover() function,
+      change the vertical crop anchor from centered (dy = y + (h - drawH) / 2)
+      to top-biased (e.g. dy = y + (h - drawH) * 0.15, i.e. only 15% of the
+      overflow trimmed from the top instead of 50%) so that faces - which sit
+      in the upper 15-30% of most of these character portraits - stay visible
+      instead of showing mostly chest/torso. Keep horizontal centering
+      unchanged (only the vertical anchor changes). (2) Replace all 12
+      catalog images + custom-event.png + background.png with the final
+      curated set already prepared by the PM at
+      /private/tmp/claude-502/-Users-Carlos-Documents-Carlos-mtg-nic-toolbox/8d8b2788-d477-4b76-9bf6-fad9e3125cb3/scratchpad/card-art-final/
+      (one .jpg per catalog slug, filenames match exactly:
+      moderno/pauper/duel/standard/legacy/edh-fun/store-championship/
+      commander-party/proximamente/taller-novatos/draft/sealed/
+      custom-event/background.jpg). These are now iconic named Magic
+      characters (Chandra, Jace, Gideon, Ajani, Garruk x2, Kiora, Emrakul,
+      Liliana, Lyra, Karn, Koth, Fblthp) with horizontal flips already
+      applied by the PM where needed so Viernes-column formats
+      (moderno/pauper/duel/standard/legacy) face right and Domingo-column
+      formats (edh-fun/store-championship/commander-party/proximamente) face
+      left (an intentional "look at each other across the gap" composition
+      from the original reference calendar). Convert each .jpg to .png (e.g.
+      `sips -s format png in.jpg --out out.png`) and place at the existing
+      apps/calendar-generator/assets/images/<slug>.png paths, overwriting the
+      prior Reality Fracture selections. Do NOT change catalog.mjs's
+      id/name/image-path wiring - only file contents change. (3) Update
+      apps/calendar-generator/assets/images/ATTRIBUTION.md with the new
+      per-slug card credits (same Reality Fracture set, different specific
+      cards now - see the slug->card mapping above; keep the existing Wizards
+      of the Coast / Fan Content Policy framing, just update the table). (4)
+      Re-run the grid unit test (unaffected) and re-verify visually (headless
+      browser, reusing the Playwright+Chromium scratchpad if still usable)
+      with the full reference assignment set (Oct2=Moderno, Oct4=EDH Fun,
+      Oct9=Pauper, Oct11=EDH Fun, Oct16=Duel, Oct18=custom 'Store
+      Championship (Pauper)', Oct23=Moderno, Oct24=Taller Novatos,
+      Oct25=Commander Party, Oct30=Pauper, Nov1 spillover=Proximamente) that:
+      faces are visible (not just chests) in each populated cell, and
+      same-row Viernes/Domingo pairs visually face each other (e.g. row0:
+      Oct2 Moderno character should face right, Oct4 EDH Fun character
+      should face left). View your own exported PNG via Read before claiming
+      success - this is a visual-quality task, so actually look at it
+      critically rather than just checking it renders without errors.
+    allowed_files:
+      - "apps/calendar-generator/src/render.mjs"
+      - "apps/calendar-generator/assets/images/moderno.png"
+      - "apps/calendar-generator/assets/images/pauper.png"
+      - "apps/calendar-generator/assets/images/duel.png"
+      - "apps/calendar-generator/assets/images/edh-fun.png"
+      - "apps/calendar-generator/assets/images/store-championship.png"
+      - "apps/calendar-generator/assets/images/taller-novatos.png"
+      - "apps/calendar-generator/assets/images/commander-party.png"
+      - "apps/calendar-generator/assets/images/proximamente.png"
+      - "apps/calendar-generator/assets/images/standard.png"
+      - "apps/calendar-generator/assets/images/legacy.png"
+      - "apps/calendar-generator/assets/images/draft.png"
+      - "apps/calendar-generator/assets/images/sealed.png"
+      - "apps/calendar-generator/assets/images/custom-event.png"
+      - "apps/calendar-generator/assets/images/background.png"
+      - "apps/calendar-generator/assets/images/ATTRIBUTION.md"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "Visual export with the full reference assignment set: faces visible in every populated cell, Viernes characters face right, Domingo characters face left, no console/page errors"
+    stop_if:
+      - "A specific image still shows no face after the crop-anchor change (may need a slightly different anchor value or that specific image swapped - use judgment, this is a visual-quality task)"
+      - "Verification fails twice after a fix attempt"
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/src/render.mjs
+        - apps/calendar-generator/assets/images/moderno.png
+        - apps/calendar-generator/assets/images/pauper.png
+        - apps/calendar-generator/assets/images/duel.png
+        - apps/calendar-generator/assets/images/edh-fun.png
+        - apps/calendar-generator/assets/images/store-championship.png
+        - apps/calendar-generator/assets/images/taller-novatos.png
+        - apps/calendar-generator/assets/images/commander-party.png
+        - apps/calendar-generator/assets/images/proximamente.png
+        - apps/calendar-generator/assets/images/standard.png
+        - apps/calendar-generator/assets/images/legacy.png
+        - apps/calendar-generator/assets/images/draft.png
+        - apps/calendar-generator/assets/images/sealed.png
+        - apps/calendar-generator/assets/images/custom-event.png
+        - apps/calendar-generator/assets/images/background.png
+        - apps/calendar-generator/assets/images/ATTRIBUTION.md
+      commands:
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "sips conversion of 14 curated images"
+          status: pass
+        - cmd: "Headless Chromium export with full reference assignment set, 0 console/page errors"
+          status: pass
+        - cmd: "PM personally viewed t017-exported.png: faces clearly visible in every cell, Viernes/Domingo facing pairs confirmed working (Oct2 Chandra right / Oct4 Kiora left; Oct9 Jace right / Oct11 Kiora left)"
+          status: pass
+      summary: "Changed drawCover's vertical anchor to top-biased (0.15). Replaced all 14 images with curated iconic characters (Chandra, Jace, Gideon, Ajani, Garruk x2, Kiora, Emrakul, Liliana, Lyra, Karn, Koth, Fblthp), 4 flipped for correct facing direction. Updated ATTRIBUTION.md. Unit test 6/6 pass. PM confirmed visually: dramatic improvement, faces visible everywhere, facing-pair composition works as intended."
+      blocked_reason: null
+      spawned_tasks: []
+  - id: T018
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit tranche 8: personally view the exported PNG with the full reference assignment set. Confirm faces are visible (not just chests/torsos) in every populated cell, confirm the characters are recognizable/iconic (not generic unknown creatures), and confirm the left/right facing composition pattern (Viernes faces right, Domingo faces left) reads correctly, especially comparing same-row pairs. Confirm ATTRIBUTION.md matches the new images. No regression to tranches 1-7."
+    inputs:
+      - "T017 receipt"
+      - "docs/goals/calendar-generator/notes/reference-calendar-layout.png"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if any populated cell still crops off the character's face."
+      - "Reject completion if the facing-direction pattern doesn't read correctly for at least the clear same-row Viernes/Domingo pairs (row0: Oct2/Oct4, row1: Oct9/Oct11)."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: not_complete
+      full_outcome_complete: false
+      rationale: "Judge found two issues; PM independently re-verified both against the actual full-resolution rendered cells (cropped precisely using render.mjs's own GRID_TOP/rowHeight/columnWidth math from t017-downloaded.png, the real canvas.toBlob export, not the smaller screenshot). Confirmed real bug: pauper.png (Jace) was flipped backwards - the ORIGINAL unflipped Jace, Reality Sculptor art already gestures/gazes right, so flipping it made him face LEFT, matching Kiora's left-facing EDH Fun art instead of opposing it. Row1 (Oct9 Jace / Oct11 Kiora) both face left instead of looking at each other. Disputed finding: Judge's claim that edh-fun.png (Kiora) shows 'zero facial features visible' does not hold up - PM zoomed into the actual rendered Oct4 cell and her face (eye, nose, lips, jawline) is clearly visible in a contemplative downward profile; no change needed there. All other checked cells (Oct16 Duel/Gideon faces right, Oct18 Store Championship/Garruk faces left, Oct25 Commander Party/Emrakul symmetric, legacy.png/Garruk Veiled Butcher faces right, standard.png/Ajani faces right) confirmed correct on direct inspection."
+      evidence:
+        - "node --test apps/calendar-generator/src/grid.test.mjs: 6/6 pass (Judge-run)"
+        - "Judge's full audit: Jace flip direction bug confirmed correct by PM via direct cell crop inspection (oct9-cell-crop.png, oct11-cell-crop.png)"
+        - "PM disputes Judge's Kiora face-visibility claim: zoomed crop (kiora-face-zoom.png) shows clear facial features"
+        - "PM verified unaffected cells: oct16-duel.png, oct18-storechamp.png, oct25-fixed.png (Commander Party, corrected an indexing bug in PM's own verification script), legacy.png, standard.png all show correct facing direction"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Spawn T021 (Worker): revert pauper.png to the unflipped Jace, Reality Sculptor art (do not flip it - original already faces/gestures right); update ATTRIBUTION.md's Jace entry to remove the incorrect 'flipped' note."
+        - "Spawn T022 (Judge): re-audit with the fix, focusing specifically on row1 (Oct9/Oct11) facing correctly, plus a final full pass."
+  - id: T019
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: medium
+    objective: >
+      Add a selectable full-background image gallery feature, extensible for
+      future additions. (1) Create apps/calendar-generator/assets/backgrounds/
+      and add the first gallery image there as echoverse-reveal.jpg (PM
+      already sourced it at
+      /private/tmp/claude-502/-Users-Carlos-Documents-Carlos-mtg-nic-toolbox/8d8b2788-d477-4b76-9bf6-fad9e3125cb3/scratchpad/backgrounds-gallery/echoverse-reveal.jpg
+      - 1424x1040, already textless/logo-free, a Reality Fracture reveal
+      illustration showing a hooded dark-blue hooded figure's face with
+      glowing eyes beside an explosive golden fractured-city vista, sourced
+      from TCGplayer's article "Reality Fracture Twists All of Your Favorite
+      Cards and Creatures..." at
+      https://www.tcgplayer.com/content/article/Reality-Fracture-Twists-All-of-Your-Favorite-Cards-and-Creatures-and-Also-Turns-Jace-Into-a-Token/6f7b45be-96d5-4222-a7da-34842863b4a8/
+      - the user explicitly chose this image). (2) Create a small data module
+      (e.g. src/backgrounds.mjs) listing background options as {id, name,
+      image} entries - exactly two for now: {id: 'striped', name: 'Rayas
+      Azules (default)', image: null} meaning "use the existing procedural
+      drawStripedBackground()", and {id: 'echoverse-reveal', name:
+      'Echoverse', image: 'assets/backgrounds/echoverse-reveal.jpg'}.
+      Structure this so adding a third option later is just one more entry +
+      one image file, per the user's stated intent to keep adding more over
+      time. (3) Add a <select id="background-select"> control in index.html
+      (near the month/year picker) populated from this list, defaulting to
+      'striped'. (4) Wire it in app.mjs: preload any image-backed background
+      options (not just the catalog images), track the selected background
+      id in state, re-render on change. (5) In render.mjs, branch: if the
+      selected background has image:null, call the existing
+      drawStripedBackground(ctx) as before; if it has an image, draw that
+      image full-bleed using the same "cover" fit as drawCover() (not a plain
+      stretch, to avoid distorting the art) rather than the plain stretch the
+      old background.png used. (6) Add an ATTRIBUTION entry (reuse/extend
+      assets/images/ATTRIBUTION.md or add
+      assets/backgrounds/ATTRIBUTION.md - PM's call) crediting this Reality
+      Fracture reveal art (Wizards of the Coast, sourced via the TCGplayer
+      article above) under the same Wizards of the Coast / Fan Content Policy
+      framing as the catalog art - note the exact card/artist is not
+      independently confirmed, so describe it honestly as "Reality Fracture
+      reveal/key art via TCGplayer" rather than asserting a specific artist
+      name. (7) Re-run the grid unit test (unaffected) and re-verify visually
+      (headless browser) both options: default striped background unchanged
+      from tranche 3/8, and selecting "Echoverse" shows that image full-bleed
+      (cover-fit, not stretched/distorted) with the day-cell art and grid/text
+      still rendering correctly on top. View your own exported PNG via Read
+      for both options before claiming success.
+    allowed_files:
+      - "apps/calendar-generator/index.html"
+      - "apps/calendar-generator/src/app.mjs"
+      - "apps/calendar-generator/src/render.mjs"
+      - "apps/calendar-generator/src/backgrounds.mjs"
+      - "apps/calendar-generator/assets/backgrounds/echoverse-reveal.jpg"
+      - "apps/calendar-generator/assets/backgrounds/ATTRIBUTION.md"
+      - "apps/calendar-generator/assets/images/ATTRIBUTION.md"
+      - "apps/calendar-generator/README.md"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "Visual export with background=striped: unchanged from tranche 8 (blue diagonal stripes)"
+      - "Visual export with background=echoverse-reveal: art full-bleed, cover-fit (not stretched/squished), day-cell art and text still render correctly on top, no console/page errors"
+    stop_if:
+      - "The cover-fit background image looks badly cropped in a way that loses the hooded-figure face or the city-burst focal point - adjust crop/positioning once; if still bad, report rather than ship"
+      - "Verification fails twice after a fix attempt"
+    receipt: null
+  - id: T020
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Audit the background-gallery feature: personally view exports with both background options (striped default, and the new 'Echoverse' image). Confirm the default is unchanged, confirm the new option renders full-bleed without distortion/awkward cropping, confirm the data structure is genuinely easy to extend (one entry + one file, per user's stated intent), and confirm attribution is recorded for the new image."
+    inputs:
+      - "T019 receipt"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if selecting the new background distorts/stretches the image instead of cover-fitting it."
+      - "Reject completion if adding a future background would require touching more than the data list + an image file (i.e. reject over-engineered or under-engineered approaches)."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt: null
+  - id: T021
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: low
+    objective: >
+      Fix a facing-direction bug found by Judge T018 and confirmed by PM:
+      apps/calendar-generator/assets/images/pauper.png (Jace, Reality
+      Sculptor) was incorrectly horizontally flipped during T017. The
+      ORIGINAL (unflipped) art already gestures/gazes toward the right
+      (open hand reaches right, raised fist on the left, gaze tilts
+      right) - flipping it made him face left, which wrongly matches
+      Kiora's left-facing edh-fun.png instead of opposing it (Oct9
+      Pauper/Jace and Oct11 EDH Fun/Kiora should face each other, both
+      currently face left). Revert pauper.png to the UNFLIPPED Jace art.
+      The original unflipped source is at
+      /private/tmp/claude-502/-Users-Carlos-Documents-Carlos-mtg-nic-toolbox/8d8b2788-d477-4b76-9bf6-fad9e3125cb3/scratchpad/card-art-v2/jace.jpg
+      - convert straight to PNG with no flip (e.g. `sips -s format png
+      jace.jpg --out pauper.png`) and overwrite the existing file. Also
+      update apps/calendar-generator/assets/images/ATTRIBUTION.md's Jace
+      row to remove/correct the incorrect "flipped" note (it should now
+      say not flipped, or simply omit the flip note). Do not touch any
+      other image - Judge's other concern (Kiora's face visibility in
+      edh-fun.png) was independently re-verified by the PM via a zoomed
+      crop of the actual rendered cell and found to be fine (clear
+      profile with visible eye/nose/lips/jaw) - leave edh-fun.png
+      unchanged. Re-run the grid unit test (unaffected) and re-verify
+      visually (headless browser) that Oct9 (Pauper/Jace) now faces
+      right while Oct11 (EDH Fun/Kiora) faces left - i.e. they now face
+      each other. View your own exported PNG via Read, specifically
+      cropping/inspecting the Oct9 and Oct11 cells, before claiming
+      success.
+    allowed_files:
+      - "apps/calendar-generator/assets/images/pauper.png"
+      - "apps/calendar-generator/assets/images/ATTRIBUTION.md"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "Visual export: Oct9 (Pauper/Jace) faces/gestures right, Oct11 (EDH Fun/Kiora) faces left - they visibly face each other across the gap"
+    stop_if:
+      - "The unflipped jace.jpg source is missing or unreadable"
+      - "Verification fails twice after a fix attempt"
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/assets/images/pauper.png
+        - apps/calendar-generator/assets/images/ATTRIBUTION.md
+      commands:
+        - cmd: "sips -s format png jace.jpg --out pauper.png (no flip)"
+          status: pass
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "Playwright real-download verify at correct full-res coordinates"
+          status: pass
+        - cmd: "PM personally viewed t021-oct9.png and t021-oct11.png: Jace gestures right, Kiora faces left, they face each other"
+          status: pass
+      summary: "Reverted pauper.png to unflipped Jace art. Updated ATTRIBUTION.md. Unit test 6/6 pass. PM confirmed visually: Oct9 Jace and Oct11 Kiora now face each other correctly."
+      blocked_reason: null
+      spawned_tasks: []
+  - id: T022
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Re-audit tranche 8 after the Jace fix: personally crop and inspect the Oct9 and Oct11 cells from the real full-resolution exported PNG (not a scaled screenshot) and confirm Jace now faces right while Kiora faces left (they face each other). Do a final full pass over all populated cells (faces visible, iconic characters, facing pattern, no regression to tranches 1-7) before approving completion."
+    inputs:
+      - "T021 receipt"
+      - "docs/goals/calendar-generator/notes/reference-calendar-layout.png"
+    constraints:
+      - "Do not implement."
+      - "When inspecting cells, crop the real full-resolution canvas.toBlob-downloaded PNG using render.mjs's actual GRID_TOP/rowHeight/columnWidth constants - not a Playwright screenshot, which may be scaled down and give false crop coordinates."
+      - "Reject completion if Oct9 and Oct11 don't face each other, or if any other populated cell has a genuine (re-verified, not assumed) problem."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Personally ran grid.test.mjs (6/6 pass) and a fresh real-browser full-resolution export (0 console/page errors). Cropped every populated cell using render.mjs's actual constants against verified 2000x1236 pixel images. Oct9 Jace faces right, Oct11 Kiora faces left - confirmed facing each other. Bonus: Oct30 (same pauper.png) also now correctly pairs with Nov1 Liliana. All other populated cells byte-identical to the prior approved render, confirming zero regression. Kiora face-visibility dispute resolved via deep zoom. ATTRIBUTION.md correct. git diff scope matches expectations exactly."
+      evidence:
+        - "node --test grid.test.mjs: 6/6 pass"
+        - "Fresh Playwright export, 0 console/page errors, 2000x1236 verified"
+        - "Cell crops using render.mjs's own layout constants"
+        - "MD5 comparison confirms no regression in unaffected cells"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Set T022 status=done, decision=complete, full_outcome_complete=true."
+        - "Set goal.status=done (tranche 8 complete)."
+        - "T019/T020 (background-gallery feature) remain queued as a separate later scope."
 checks:
   dirty_fingerprint: unknown
   last_verification:

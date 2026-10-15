@@ -259,6 +259,13 @@ function drawContain(ctx, image, x, y, w, h) {
  * Draws `image` into the rect (x, y, w, h) scaled to cover the full rect
  * (like CSS `background-size: cover`), cropping overflow, instead of the
  * default drawImage stretch-to-fit behavior.
+ *
+ * The vertical anchor is top-biased (only 15% of the vertical overflow is
+ * trimmed from the top, vs. a centered 50%) because these portrait-style
+ * character art pieces have their faces in the upper 15-30% of the source
+ * image - a centered crop tends to cut off faces and show mostly
+ * chest/torso once the art is scaled to cover a landscape cell. Horizontal
+ * centering is unchanged.
  */
 function drawCover(ctx, image, x, y, w, h) {
   const imgW = image.naturalWidth || image.width;
@@ -271,7 +278,7 @@ function drawCover(ctx, image, x, y, w, h) {
   const drawW = imgW * scale;
   const drawH = imgH * scale;
   const dx = x + (w - drawW) / 2;
-  const dy = y + (h - drawH) / 2;
+  const dy = y + (h - drawH) * 0.15;
   ctx.drawImage(image, dx, dy, drawW, drawH);
 }
 
