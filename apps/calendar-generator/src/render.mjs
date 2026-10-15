@@ -7,10 +7,17 @@
 // canvas implementation used for self-verification (both expose the same
 // 2D context API).
 //
-// Fonts: a generic bold system font stack is used everywhere, with
-// strokeText (black) under fillText (white) to get the thick
-// white-fill/black-stroke "poster" look from the reference image. No
-// custom/licensed web font is bundled in this tranche.
+// Fonts: a generic bold system font stack (FONT_STACK) is used for date
+// numbers and per-day labels, with strokeText (black) under fillText
+// (white) to get the thick white-fill/black-stroke "poster" look from the
+// reference image. A second, licensed-with-caveats display font
+// (DISPLAY_FONT_STACK, "MagicLogo" - see
+// assets/fonts/LICENSE-NOTICE.md) is used ONLY for the two fixed,
+// always-accent-free strings: the month/year title and the
+// VIERNES/SABADO/DOMINGO column headers. That font has only basic
+// A-Z/a-z/0-9 glyphs (no Ñ/accents), so it must never be used for date
+// numbers or per-day labels, which are user-editable free text that can
+// contain accented Spanish characters.
 
 import { getWeekendGrid, isInMonth, dateKey, WEEKDAY_LABELS, SPANISH_MONTH_NAMES } from './grid.mjs';
 
@@ -18,6 +25,8 @@ export const CANVAS_WIDTH = 1600;
 export const CANVAS_HEIGHT = 1236;
 
 const FONT_STACK = '"Arial Black", system-ui, sans-serif';
+// Used ONLY for the title and column headers - see note above.
+const DISPLAY_FONT_STACK = '"MagicLogo", "Arial Black", system-ui, sans-serif';
 
 const TITLE_AREA_HEIGHT = 170;
 const HEADER_HEIGHT = 75;
@@ -81,10 +90,11 @@ export function renderCalendar(ctx, { year, monthIndex, assignments, images }) {
   // cell). Matches the blue/diagonal-stripe motif of the logo graphic.
   drawStripedBackground(ctx);
 
-  // 2. Title bar: "OCTUBRE 2026"
+  // 2. Title bar: "OCTUBRE 2026" - fixed, accent-free string, uses the
+  // display font.
   const title = `${SPANISH_MONTH_NAMES[monthIndex]} ${year}`;
   outlinedText(ctx, title, GRID_MARGIN_X, 110, {
-    font: `bold 92px ${FONT_STACK}`,
+    font: `bold 92px ${DISPLAY_FONT_STACK}`,
     strokeWidth: 10,
     align: 'left',
     baseline: 'alphabetic',
@@ -107,13 +117,14 @@ export function renderCalendar(ctx, { year, monthIndex, assignments, images }) {
     drawContain(ctx, images.flag, boxX, boxY, boxW, boxH);
   }
 
-  // 4. Column headers (VIERNES / SABADO / DOMINGO)
+  // 4. Column headers (VIERNES / SABADO / DOMINGO) - fixed, accent-free
+  // strings, use the display font.
   const gridWidth = CANVAS_WIDTH - GRID_MARGIN_X * 2;
   const columnWidth = gridWidth / COLUMN_COUNT;
   WEEKDAY_LABELS.forEach((label, i) => {
     const cx = GRID_MARGIN_X + columnWidth * i + columnWidth / 2;
     outlinedText(ctx, label, cx, TITLE_AREA_HEIGHT + 52, {
-      font: `bold 46px ${FONT_STACK}`,
+      font: `bold 46px ${DISPLAY_FONT_STACK}`,
       strokeWidth: 7,
       align: 'center',
       baseline: 'alphabetic',

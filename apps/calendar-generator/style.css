@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "MagicLogo";
+  src: url("assets/fonts/magic-the-gathering.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
 :root {
   color-scheme: light;
   --bg: #11161c;

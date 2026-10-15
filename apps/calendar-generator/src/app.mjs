@@ -183,10 +183,30 @@ function setupControls() {
   });
 }
 
+async function loadDisplayFont() {
+  // Canvas text does not wait for webfonts to finish loading on its own -
+  // an un-loaded @font-face silently falls back to the next font in the
+  // stack. Explicitly load the exact font/size pairs used for the title
+  // and column headers (see render.mjs) and await document.fonts.ready as
+  // a belt-and-suspenders fallback, before the first regenerateForSelectedMonth()
+  // canvas draw.
+  if (!('fonts' in document)) return;
+  try {
+    await Promise.all([
+      document.fonts.load('bold 92px "MagicLogo"'),
+      document.fonts.load('bold 46px "MagicLogo"'),
+    ]);
+    await document.fonts.ready;
+  } catch (err) {
+    console.error('Display font failed to load, falling back to system font:', err);
+  }
+}
+
 async function init() {
   setupControls();
   const status = document.getElementById('status');
   try {
+    await loadDisplayFont();
     resolvedImages = await preloadImages();
     regenerateForSelectedMonth();
     status.textContent = '';

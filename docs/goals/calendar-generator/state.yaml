@@ -7,12 +7,12 @@ goal:
   title: "Calendar Generator (mtg-nic-toolbox)"
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
-  tranche: "Tranche 3 (visual cohesion pass, part of an open-ended design-polish backlog): replace the mismatched Reality Fracture 'Gardenize' background art with a procedurally-drawn blue diagonal-stripe pattern matching the full-mtg-nic-logo's background motif, so the logo and the overall poster feel like one cohesive design system. More design-polish items to be added to this backlog as the user identifies them."
+  tranche: "Tranche 4 (design-polish backlog): add a display font for the fixed title/header text (\"OCTUBRE 2026\" + VIERNES/SABADO/DOMINGO), using a user-approved font file (apps/calendar-generator/assets/fonts/magic-the-gathering.ttf, Mike Hind's 1998 lookalike of the Magic: The Gathering wordmark lettering). User was explicitly informed the font is 'Copyright (c) Mike Hind, 1998. All rights reserved.' with no formal redistribution license (distributing site labels it 'personal use' only) and chose to proceed anyway for this non-commercial community project. Font has only basic A-Z/a-z/0-9 glyphs - no accented Spanish characters or n-tilde - so it must be used ONLY for the fixed, accent-free title/header strings, never for user-typed custom day labels or date numbers."
   status: done # active | blocked | done
   oracle:
-    signal: "Generate the October 2026 calendar in the app, download the PNG, and visually confirm the full-bleed background (including what bleeds through on unset Sabado cells) is a blue field with darker diagonal stripes matching the logo's motif/palette (sampled: base ~#266BAB, stripe ~#194E82, ~18deg diagonal), not the green vine card art. Logo, catalog art, grid/date/spillover/label behavior from tranches 1-2 unchanged."
+    signal: "Generate the October 2026 calendar, download the PNG, and visually confirm 'OCTUBRE 2026' and the VIERNES/SABADO/DOMINGO headers render in the new display font (distinct blocky/fantasy look vs the old generic bold sans-serif), while date numbers and per-day labels (including the accented/custom ones) remain fully legible in the existing font with no missing-glyph artifacts. No regression to tranches 1-3 (logo, card art, background, grid/spillover)."
     cadence: "after each Worker package and at final audit"
-    final_proof: "Unit test still passes (grid logic untouched), a visual demo/comparison confirms the new background pattern reads as visually cohesive with the logo (same blue family + diagonal stripe motif), and no leftover reference to the old background.png asset remains in code (or the file is left in place but unused, PM's call)."
+    final_proof: "Unit test still passes, a visual demo confirms the new font applies correctly and only to the intended fixed strings, and an attribution/license note for the font is recorded in the repo documenting the copyright and the user's informed decision to use it despite the ambiguous license."
   intake:
     original_request: "Build the first app of mtg-nic-toolbox: a tool for the MTG community in Nicaragua to generate monthly event calendars matching a reference poster layout, selecting a format (or custom event) per Fri/Sat/Sun day, each with its own repo-hosted image, plus a generic image for custom events."
     interpreted_outcome: "A static client-side web app, scaffolded as apps/calendar-generator/ in a monorepo, that lets the organizer pick a month, assign a format/custom label+image to each weekend day, and export a PNG poster matching the reference calendar layout."
@@ -567,6 +567,113 @@ tasks:
         - "Set T008 status=done, decision=complete, full_outcome_complete=true."
         - "Set goal.status=done (tranche 3 complete)."
         - "PM removed stray unreferenced apps/calendar-generator/assets/images/sample-old-images.jpeg (duplicate of the already-preserved reference image) before committing."
+  - id: T009
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: >
+      Wire up the display font already placed at
+      apps/calendar-generator/assets/fonts/magic-the-gathering.ttf (Mike
+      Hind's 1998 "Magic:the Gathering" lookalike font, confirmed via the
+      TTF's own embedded name-table metadata: "Copyright (c) Mike Hind,
+      StickFonts, 1998. All rights reserved." - user was told this explicitly
+      and chose to proceed anyway for this non-commercial community project).
+      (1) Add an @font-face rule in style.css loading this file (e.g.
+      font-family: "MagicLogo"). (2) In app.mjs, ensure the font is actually
+      loaded before the first canvas render - use the CSS Font Loading API
+      (e.g. `await document.fonts.load('bold 92px "MagicLogo"')` and/or await
+      `document.fonts.ready`) before calling regenerateForSelectedMonth() in
+      init(), since canvas text does not wait for webfonts automatically and
+      would silently fall back to the default font otherwise. (3) In
+      render.mjs, use this font ONLY for the two fixed, always-accent-free
+      strings: the "OCTUBRE 2026"-style title and the VIERNES/SABADO/DOMINGO
+      column headers. Do NOT use it for date numbers or per-day labels - the
+      font has only basic A-Z/a-z/0-9 glyphs (confirmed via fontTools: no Ñ,
+      ñ, Á, É, Í, Ó, Ú, ¿, ¡), and per-day labels are user-editable free text
+      that can contain accented Spanish characters, which would render as
+      missing-glyph boxes in this font. Keep the existing FONT_STACK (Arial
+      Black/system-ui) for date numbers and labels. (4) Add
+      apps/calendar-generator/assets/fonts/LICENSE-NOTICE.md documenting the
+      font's embedded copyright string, that it has no formal redistribution
+      license (the distributing site labels it "personal use" only), and
+      that it is used here by the repo owner's explicit, informed choice for
+      a non-commercial hobby/community project - do not characterize it as
+      freely licensed. Reference this note from the app's README.md. (5)
+      Re-run the grid unit test (unaffected) and re-verify visually (headless
+      browser, reusing the existing Playwright+Chromium scratchpad install if
+      still usable) that the title/headers render in the new blocky display
+      font while date numbers/labels (including one with an accented
+      character or ñ if easy to test) remain legible in the old font with no
+      tofu/missing-glyph boxes anywhere.
+    allowed_files:
+      - "apps/calendar-generator/style.css"
+      - "apps/calendar-generator/src/app.mjs"
+      - "apps/calendar-generator/src/render.mjs"
+      - "apps/calendar-generator/assets/fonts/LICENSE-NOTICE.md"
+      - "apps/calendar-generator/README.md"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "Visual export of October 2026: title and column headers render in the new display font (visually distinct blocky/fantasy look); date numbers and labels remain in the original font, fully legible, no missing-glyph boxes"
+      - "No console/page errors during the export run (including font 404s)"
+    stop_if:
+      - "The @font-face file fails to load (404/parse error) even after a correct relative path"
+      - "Canvas text still shows the old font for title/headers after using the Font Loading API (ordering/race condition) and a second attempt doesn't fix it"
+      - "Verification fails twice after a fix attempt"
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/style.css
+        - apps/calendar-generator/src/app.mjs
+        - apps/calendar-generator/src/render.mjs
+        - apps/calendar-generator/assets/fonts/LICENSE-NOTICE.md
+        - apps/calendar-generator/README.md
+      commands:
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "Headless Chromium: document.fonts.check('bold 92px MagicLogo') true, custom label 'Torneo de Ano Nuevo' with ene-with-tilde rendered, real PNG export via Download button"
+          status: pass
+        - cmd: "0 console/page errors including no font 404s"
+          status: pass
+        - cmd: "PM personally viewed exported PNG: title+headers in new blocky display font, label with ene-tilde renders correctly in original font, no missing-glyph boxes anywhere"
+          status: pass
+      summary: "Added @font-face for MagicLogo (magic-the-gathering.ttf), loaded via document.fonts.load/ready in app.mjs init() before first render, scoped to title+column headers only in render.mjs (date numbers/labels keep original FONT_STACK). Added LICENSE-NOTICE.md documenting the embedded all-rights-reserved copyright and no-formal-license status, referenced from README. PM visually confirmed: title/headers now show the blocky Magic-logo-style font, custom label with accented character renders correctly in the original font with no missing glyphs."
+      blocked_reason: null
+      spawned_tasks: []
+  - id: T010
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit tranche 4: personally view the exported PNG and confirm the title/headers use the new display font while date numbers and per-day labels remain in the original legible font. Confirm the font is scoped correctly (grep render.mjs to ensure the new font-family is only referenced for title/header draws, not date/label draws). Confirm LICENSE-NOTICE.md accurately documents the copyright/no-license situation rather than implying it's freely licensed. Confirm no regression to tranches 1-3."
+    inputs:
+      - "T009 receipt"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if the new font is applied to user-editable label text or date numbers (glyph-coverage risk)."
+      - "Reject completion if LICENSE-NOTICE.md misrepresents the font as freely licensed."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Personally ran node --test grid.test.mjs: 6/6 pass. Personally viewed t009-exported.png: title+headers in new blocky display font, date number and accented label 'Torneo de Ano Nuevo' in original font with no missing-glyph boxes. Grepped render.mjs: new display font scoped only to title/header draws, original font kept for date/label draws. LICENSE-NOTICE.md accurately states all-rights-reserved/no-redistribution-license, no misrepresentation. style.css/app.mjs correctly await document.fonts before first render. No regression to tranches 1-3."
+      evidence:
+        - "node --test apps/calendar-generator/src/grid.test.mjs: 6/6 pass"
+        - "t009-exported.png viewed via Read by Judge"
+        - "render.mjs read in full by Judge: font scoping confirmed correct"
+        - "LICENSE-NOTICE.md read in full by Judge: accurate licensing disclosure"
+        - "style.css and app.mjs read by Judge: font-face path and loading sequence correct"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Set T010 status=done, decision=complete, full_outcome_complete=true."
+        - "Set goal.status=done (tranche 4 complete)."
+        - "PM to commit and push tranche 4 changes."
 checks:
   dirty_fingerprint: unknown
   last_verification:
