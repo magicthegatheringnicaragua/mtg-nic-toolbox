@@ -37,10 +37,6 @@ export const CATALOG = [
 // Generic image used for free-text custom events that are not in CATALOG.
 export const CUSTOM_EVENT_IMAGE = 'assets/images/custom-event.png';
 
-// Continuous background/filler art that spans the whole poster; also what
-// shows through on unset (unassigned) weekend days.
-export const BACKGROUND_IMAGE = 'assets/images/background.png';
-
 // Nicaragua flag graphic shown in the title bar.
 export const FLAG_IMAGE = 'assets/images/flag-nicaragua.png';
 

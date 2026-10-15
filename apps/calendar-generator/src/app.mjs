@@ -5,7 +5,7 @@
 // and PNG export/download.
 
 import { getWeekendCells, dateKey, WEEKDAY_LABELS, SPANISH_MONTH_NAMES } from './grid.mjs';
-import { CATALOG, CUSTOM_EVENT_IMAGE, BACKGROUND_IMAGE, FLAG_IMAGE, findCatalogEntry } from './catalog.mjs';
+import { CATALOG, CUSTOM_EVENT_IMAGE, FLAG_IMAGE, findCatalogEntry } from './catalog.mjs';
 import { renderCalendar, buildAssignments, CANVAS_WIDTH, CANVAS_HEIGHT } from './render.mjs';
 
 const DEFAULT_YEAR = 2026;
@@ -16,7 +16,7 @@ const COLUMN_LABEL = { friday: 'VIERNES', saturday: 'SABADO', sunday: 'DOMINGO' 
 /** selections: dateKey -> { kind: 'catalog' | 'custom', catalogId?: string, label: string } */
 const selections = new Map();
 
-let resolvedImages = null; // { catalogById: Map<id, Image>, custom: Image, background: Image, flag: Image }
+let resolvedImages = null; // { catalogById: Map<id, Image>, custom: Image, flag: Image }
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -31,15 +31,13 @@ async function preloadImages() {
   const catalogEntries = await Promise.all(
     CATALOG.map(async (entry) => [entry.id, await loadImage(entry.image)]),
   );
-  const [custom, background, flag] = await Promise.all([
+  const [custom, flag] = await Promise.all([
     loadImage(CUSTOM_EVENT_IMAGE),
-    loadImage(BACKGROUND_IMAGE),
     loadImage(FLAG_IMAGE),
   ]);
   return {
     catalogById: new Map(catalogEntries),
     custom,
-    background,
     flag,
   };
 }
@@ -122,7 +120,7 @@ function renderNow() {
     year,
     monthIndex,
     assignments,
-    images: { background: resolvedImages.background, flag: resolvedImages.flag },
+    images: { flag: resolvedImages.flag },
   });
 }
 

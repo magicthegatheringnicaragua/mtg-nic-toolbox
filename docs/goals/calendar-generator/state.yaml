@@ -7,12 +7,12 @@ goal:
   title: "Calendar Generator (mtg-nic-toolbox)"
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
-  tranche: "Tranche 2 (art pass): replace the Nicaragua flag with the full-mtg-nic-logo asset (non-distorting fit), and replace all 12 catalog + custom-event + background placeholder images with curated Magic: The Gathering Reality Fracture card art, with attribution recorded."
+  tranche: "Tranche 3 (visual cohesion pass, part of an open-ended design-polish backlog): replace the mismatched Reality Fracture 'Gardenize' background art with a procedurally-drawn blue diagonal-stripe pattern matching the full-mtg-nic-logo's background motif, so the logo and the overall poster feel like one cohesive design system. More design-polish items to be added to this backlog as the user identifies them."
   status: done # active | blocked | done
   oracle:
-    signal: "Generate the October 2026 calendar in the app with the same reference assignments as tranche 1, download the PNG, and visually confirm: (a) the top-right graphic is the mtg-nic logo, not the Nicaragua flag, rendered without stretching/distortion, and (b) every format cell + the custom-event fallback + the background show real Reality Fracture card art instead of placeholder gradients, while the grid/date/spillover/label behavior from tranche 1 is unchanged."
+    signal: "Generate the October 2026 calendar in the app, download the PNG, and visually confirm the full-bleed background (including what bleeds through on unset Sabado cells) is a blue field with darker diagonal stripes matching the logo's motif/palette (sampled: base ~#266BAB, stripe ~#194E82, ~18deg diagonal), not the green vine card art. Logo, catalog art, grid/date/spillover/label behavior from tranches 1-2 unchanged."
     cadence: "after each Worker package and at final audit"
-    final_proof: "Unit test still passes (grid logic untouched), a visual demo/comparison confirms the logo and real art render correctly with no distortion, and attribution for the card art source is recorded in the repo."
+    final_proof: "Unit test still passes (grid logic untouched), a visual demo/comparison confirms the new background pattern reads as visually cohesive with the logo (same blue family + diagonal stripe motif), and no leftover reference to the old background.png asset remains in code (or the file is left in place but unused, PM's call)."
   intake:
     original_request: "Build the first app of mtg-nic-toolbox: a tool for the MTG community in Nicaragua to generate monthly event calendars matching a reference poster layout, selecting a format (or custom event) per Fri/Sat/Sun day, each with its own repo-hosted image, plus a generic image for custom events."
     interpreted_outcome: "A static client-side web app, scaffolded as apps/calendar-generator/ in a monorepo, that lets the organizer pick a month, assign a format/custom label+image to each weekend day, and export a PNG poster matching the reference calendar layout."
@@ -476,6 +476,97 @@ tasks:
         - "Set T006 status=done with this receipt, decision=complete, full_outcome_complete=true."
         - "Set goal.status=done (tranche 2 complete)."
         - "PM to commit tranche 2 changes and .gitignore .DS_Store (handled separately by PM)."
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: >
+      Replace the full-bleed poster background with a procedurally-drawn blue
+      diagonal-stripe pattern matching apps/calendar-generator/assets/images/full-mtg-nic-logo.jpg's
+      background motif, instead of the mismatched Reality Fracture "Gardenize"
+      green vine art. Sampled palette from the logo: base blue ~#266BAB,
+      darker stripe blue ~#194E82, stripes run at a shallow diagonal (~15-20deg
+      from horizontal), evenly spaced, moderate thickness - eyeball-match the
+      logo's look rather than needing pixel-perfect replication. Implement
+      this as a new function in src/render.mjs (e.g. drawStripedBackground(ctx))
+      using plain ctx.save/translate/rotate/beginPath/moveTo/lineTo/stroke
+      calls - do NOT use ctx.createPattern with an offscreen canvas, since
+      render.mjs must stay DOM-independent (it's also exercised via headless
+      node-canvas). Call this instead of the old
+      ctx.drawImage(images.background, 0,0,CANVAS_WIDTH,CANVAS_HEIGHT) line.
+      Remove the now-unused background.png loading path: drop
+      BACKGROUND_IMAGE from src/catalog.mjs, stop preloading/passing
+      images.background in src/app.mjs, and update renderCalendar()'s
+      signature/usage in src/render.mjs accordingly. Leave
+      assets/images/background.png file in place (unused) rather than
+      deleting it, to keep this change minimal. Re-run the grid unit test
+      (unaffected) and re-verify visually (headless browser preferred,
+      reusing the already-installed Playwright+Chromium in
+      /private/tmp/claude-502/-Users-Carlos-Documents-Carlos-mtg-nic-toolbox/8d8b2788-d477-4b76-9bf6-fad9e3125cb3/scratchpad/pw-verify/
+      if still usable, otherwise reinstall) that the new background renders
+      correctly full-bleed, bleeds through correctly on unset Sabado cells,
+      and reads as visually cohesive with the logo (same blue family +
+      diagonal stripe motif side by side).
+    allowed_files:
+      - "apps/calendar-generator/src/render.mjs"
+      - "apps/calendar-generator/src/catalog.mjs"
+      - "apps/calendar-generator/src/app.mjs"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "Visual export of October 2026: background is a blue diagonal-stripe field (not green vine art), visually cohesive with the logo's motif; all existing cell art/labels/spillover/custom-label behavior unchanged"
+      - "No console/page errors during the export run"
+    stop_if:
+      - "Cannot produce a visually convincing diagonal-stripe pattern without an offscreen canvas (ask PM/Judge before reaching for ctx.createPattern)"
+      - "Verification fails twice after a fix attempt"
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/src/render.mjs
+        - apps/calendar-generator/src/catalog.mjs
+        - apps/calendar-generator/src/app.mjs
+      commands:
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "Real headless Chromium export (reused existing scratchpad Playwright install)"
+          status: pass
+        - cmd: "PM personally viewed exported-calendar.png: blue diagonal-stripe background reads cohesively with the logo motif, bleeds through correctly on unset Sabado cells, all cell art/labels/spillover/custom-label unchanged"
+          status: pass
+      summary: "Added drawStripedBackground(ctx) to render.mjs (base #266BAB, stripes #194E82, 18deg, plain path/stroke calls, no offscreen canvas), replacing the old drawImage background call. Removed BACKGROUND_IMAGE from catalog.mjs and its preload path in app.mjs; background.png left on disk unused. Unit test 6/6 pass. PM visually confirmed the result: background now matches the logo's blue diagonal-stripe motif, cohesive overall look."
+      blocked_reason: null
+      spawned_tasks: []
+  - id: T008
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit tranche 3: personally view the exported PNG and compare its background against the logo's background motif side by side. Confirm visual cohesion (same blue family, diagonal stripe pattern), confirm no regression to tranches 1-2 behavior (grid/spillover/custom-label/catalog art/logo), confirm the unit test passes, and confirm background.png's removal from the code path didn't break image loading (no console errors)."
+    inputs:
+      - "T007 receipt"
+      - "apps/calendar-generator/assets/images/full-mtg-nic-logo.jpg"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if the background still looks like unrelated card art or if the new pattern clashes with the logo rather than matching it."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Personally ran node --test grid.test.mjs: 6/6 pass. Personally viewed full-mtg-nic-logo.jpg side by side with exported-calendar.png: background matches the logo's blue family and stripe motif/angle, no trace of old green card art. No regression to tranches 1-2: logo undistorted, all cell art, Nov1 spillover, custom label, unset-cell background bleed all intact. Confirmed drawStripedBackground uses only plain path/stroke calls, BACKGROUND_IMAGE/images.background fully removed from catalog.mjs/app.mjs, background.png left unreferenced on disk."
+      evidence:
+        - "node --test apps/calendar-generator/src/grid.test.mjs run by Judge: 6/6 pass"
+        - "full-mtg-nic-logo.jpg and exported-calendar.png viewed side by side by Judge via Read"
+        - "render.mjs/catalog.mjs/app.mjs read by Judge; grep confirms zero remaining BACKGROUND_IMAGE/images.background references"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Set T008 status=done, decision=complete, full_outcome_complete=true."
+        - "Set goal.status=done (tranche 3 complete)."
+        - "PM removed stray unreferenced apps/calendar-generator/assets/images/sample-old-images.jpeg (duplicate of the already-preserved reference image) before committing."
 checks:
   dirty_fingerprint: unknown
   last_verification:

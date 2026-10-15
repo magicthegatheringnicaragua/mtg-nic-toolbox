@@ -67,7 +67,6 @@ function wrapText(ctx, text, maxWidth, font) {
  *   `image` is a pre-loaded image-like object (HTMLImageElement or
  *   node-canvas Image) to draw for that day's cell.
  * @param {object} options.images
- * @param {any} options.images.background - full-bleed background/filler art
  * @param {any} options.images.flag - Nicaragua flag graphic
  */
 export function renderCalendar(ctx, { year, monthIndex, assignments, images }) {
@@ -76,12 +75,11 @@ export function renderCalendar(ctx, { year, monthIndex, assignments, images }) {
 
   ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  // 1. Full-bleed continuous background/filler art behind everything,
-  // including unset cells (matches the reference: unset Sabado cells show
-  // the same background art bleeding through, not a blank cell).
-  if (images.background) {
-    ctx.drawImage(images.background, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-  }
+  // 1. Full-bleed procedurally-drawn blue diagonal-stripe background behind
+  // everything, including unset cells (matches the reference: unset Sabado
+  // cells show the same background art bleeding through, not a blank
+  // cell). Matches the blue/diagonal-stripe motif of the logo graphic.
+  drawStripedBackground(ctx);
 
   // 2. Title bar: "OCTUBRE 2026"
   const title = `${SPANISH_MONTH_NAMES[monthIndex]} ${year}`;
@@ -179,6 +177,49 @@ export function renderCalendar(ctx, { year, monthIndex, assignments, images }) {
       }
     });
   });
+}
+
+// Palette sampled from assets/images/full-mtg-nic-logo.jpg's background
+// motif: a base blue field with darker, evenly-spaced diagonal stripes.
+const STRIPE_BASE_COLOR = '#266BAB';
+const STRIPE_DARK_COLOR = '#194E82';
+const STRIPE_ANGLE_DEG = 18; // shallow diagonal, matching the logo
+const STRIPE_WIDTH = 26;
+const STRIPE_SPACING = 48; // distance between stripe centers
+
+/**
+ * Draws a full-bleed base-blue field with darker evenly-spaced diagonal
+ * stripes, matching the background motif of the mtg-nic logo asset. Uses
+ * only plain path/stroke calls (no ctx.createPattern/offscreen canvas) so
+ * this module stays DOM-independent and works under headless node-canvas.
+ */
+function drawStripedBackground(ctx) {
+  ctx.save();
+  ctx.fillStyle = STRIPE_BASE_COLOR;
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  // Clip to the canvas bounds so the rotated stripe lines (drawn well
+  // beyond the canvas edges to guarantee full diagonal coverage) never
+  // leak outside the poster area.
+  ctx.beginPath();
+  ctx.rect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  ctx.clip();
+
+  ctx.translate(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+  ctx.rotate((STRIPE_ANGLE_DEG * Math.PI) / 180);
+
+  const diag = Math.sqrt(CANVAS_WIDTH * CANVAS_WIDTH + CANVAS_HEIGHT * CANVAS_HEIGHT);
+  ctx.strokeStyle = STRIPE_DARK_COLOR;
+  ctx.lineWidth = STRIPE_WIDTH;
+  ctx.lineCap = 'butt';
+  for (let offset = -diag; offset <= diag; offset += STRIPE_SPACING) {
+    ctx.beginPath();
+    ctx.moveTo(offset, -diag);
+    ctx.lineTo(offset, diag);
+    ctx.stroke();
+  }
+
+  ctx.restore();
 }
 
 /**
