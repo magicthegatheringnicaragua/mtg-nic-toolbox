@@ -38,10 +38,16 @@ calendar's composition.
 | commander-party | Emrakul, the Exigent Doom | no |
 | proximamente | Liliana the Repentant | no |
 | taller-novatos | Lyra, Archangel of Dawn | no |
-| draft | Karn, Argent Defender | no |
+| draft | Aang, the Last Airbender* | no |
 | sealed | Koth, the Geomancer | no |
 | custom-event | Fblthp, Impossibly Lost | no |
 | background | Gardenize | no (unchanged from the prior tranche) |
+
+\* The `draft` image is the one exception to the "all from Reality Fracture"
+note above: it is sourced from the Avatar: The Last Airbender crossover set
+(Magic: The Gathering x Avatar: The Last Airbender, set code `tla`), via
+Scryfall `art_crop`, filed here for convenience alongside the Reality
+Fracture selections rather than under a separate set bucket.
 
 The top-right poster graphic (`flag-nicaragua.png`) is the MTG Nicaragua
 community logo, provided directly by the organizer, not card art, and is not

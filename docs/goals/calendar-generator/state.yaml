@@ -7,12 +7,12 @@ goal:
   title: "Calendar Generator (mtg-nic-toolbox)"
   slug: "calendar-generator"
   kind: specific # specific | open_ended | existing_plan | recovery | audit
-  tranche: "Tranche 10: (1) Make the 12 format catalog images set-aware. Introduce a 'Set' picker (mirroring the background gallery's extensibility pattern) so each format (Moderno, Pauper, etc.) resolves its image from the currently-selected MTG set folder instead of one fixed global image. Only one set exists today (Reality Fracture - the current images, moved into assets/images/reality-fracture/); the user will request/upload a new 12-image set each time a new MTG set releases, and adding it should be just a new folder of images + one data entry, no code changes. (2) Change the background gallery's default from 'striped' (Rayas Azules) to 'echoverse-reveal' (Echoverse) - keep both options selectable, just flip which one loads by default."
-  status: done # active | blocked | done
+  tranche: "Tranche 12: unify all poster text onto the real Beleren2016-Bold font (date numbers and per-day labels, not just title/headers), since Beleren has full Spanish glyph coverage."
+  status: active # active | blocked | done
   oracle:
-    signal: "Generate the October 2026 calendar: (a) a Set picker exists, defaults to 'Reality Fracture', and the 12 catalog images load from assets/images/reality-fracture/ via that selection rather than a hardcoded path; (b) the background picker now defaults to 'Echoverse' on page load (not the striped pattern), while 'Rayas Azules' remains selectable. No regression to tranches 1-9 (grid/spillover, custom-label path, logo, font, card art content/facing, 2000px width, background cover-fit)."
+    signal: "Generate the October 2026 calendar and visually confirm date numbers and per-day labels (including an accented-character custom label) now render in the Beleren display font, matching the title/headers, with no missing-glyph boxes. No regression to tranches 1-11."
     cadence: "after each Worker package and at final audit"
-    final_proof: "Unit test still passes, a visual demo confirms the default background is now Echoverse and the Set picker correctly drives which image folder the 12 catalog entries load from, and the set data structure is genuinely a one-entry-plus-one-folder extension point (verified by checking no catalog.mjs/app.mjs code would need to change to add a second set)."
+    final_proof: "Unit test still passes, a visual demo confirms font unification with no missing glyphs anywhere on the poster."
   intake:
     original_request: "Build the first app of mtg-nic-toolbox: a tool for the MTG community in Nicaragua to generate monthly event calendars matching a reference poster layout, selecting a format (or custom event) per Fri/Sat/Sun day, each with its own repo-hosted image, plus a generic image for custom events."
     interpreted_outcome: "A static client-side web app, scaffolded as apps/calendar-generator/ in a monorepo, that lets the organizer pick a month, assign a format/custom label+image to each weekend day, and export a PNG poster matching the reference calendar layout."
@@ -65,7 +65,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/calendar-generator/"
     command: "node <skill-path>/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/calendar-generator"
 
-active_task: null
+active_task: T027
 
 tasks:
   - id: T001
@@ -1442,6 +1442,246 @@ tasks:
         - "Set T024 status=done, decision=complete, full_outcome_complete=true."
         - "Set goal.status=done (tranche 10 complete)."
         - "PM to commit tranche 10 changes."
+  - id: T025
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: low
+    objective: >
+      Two small changes. (A) Replace
+      apps/calendar-generator/assets/images/reality-fracture/draft.png with
+      the art at
+      /private/tmp/claude-502/-Users-Carlos-Documents-Carlos-mtg-nic-toolbox/8d8b2788-d477-4b76-9bf6-fad9e3125cb3/scratchpad/avatar-draft/draft-final.jpg
+      (Scryfall art_crop of "Aang, the Last Airbender" from the real Magic:
+      The Gathering x Avatar: The Last Airbender set, code 'tla'). Convert to
+      PNG (e.g. `sips -s format png draft-final.jpg --out draft.png`) and
+      overwrite in place at the SAME path
+      (assets/images/reality-fracture/draft.png) - this stays filed under
+      the Reality Fracture set bucket; do NOT create a new entry in
+      sets.mjs or move it elsewhere. Update
+      apps/calendar-generator/assets/images/reality-fracture/ATTRIBUTION.md's
+      Draft row to credit "Aang, the Last Airbender" from the Avatar: The
+      Last Airbender set (note it is a different source set than the other
+      11 images, which remain Reality Fracture - be explicit about this in
+      the attribution note, e.g. "sourced from the Avatar: The Last
+      Airbender crossover set, filed here for convenience alongside the
+      Reality Fracture selections"). (B) In
+      apps/calendar-generator/src/backgrounds.mjs, remove the 'striped'
+      entry from the BACKGROUNDS array entirely, leaving only the
+      'echoverse-reveal' entry. DEFAULT_BACKGROUND_ID should remain
+      'echoverse-reveal'. Do NOT delete render.mjs's
+      drawStripedBackground() function or its fallback branch (used when
+      background/background.image is falsy) - leave that as defensive
+      code, it is just no longer reachable via the UI's single remaining
+      option. (C) Re-run the grid unit test (unaffected) and re-verify
+      visually (headless browser) that: the Draft format now shows Aang's
+      art, the background picker shows only one option (Echoverse), and
+      the Set picker still shows only "Reality Fracture" (this is not a new
+      set). View your own exported PNG via Read before claiming success.
+    allowed_files:
+      - "apps/calendar-generator/assets/images/reality-fracture/draft.png"
+      - "apps/calendar-generator/assets/images/reality-fracture/ATTRIBUTION.md"
+      - "apps/calendar-generator/src/backgrounds.mjs"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "Visual export: Draft format shows Aang, the Last Airbender; background select has exactly one option (Echoverse); Set select still shows only Reality Fracture"
+      - "No console/page errors"
+    stop_if:
+      - "Verification fails twice after a fix attempt"
+    receipt:
+      result: done
+      changed_files:
+        - apps/calendar-generator/assets/images/reality-fracture/draft.png
+        - apps/calendar-generator/assets/images/reality-fracture/ATTRIBUTION.md
+        - apps/calendar-generator/src/backgrounds.mjs
+      commands:
+        - cmd: "sips conversion of Aang art to draft.png"
+          status: pass
+        - cmd: "node --test apps/calendar-generator/src/grid.test.mjs"
+          status: pass
+        - cmd: "Playwright verification: Draft shows Aang, background has 1 option, Set shows only Reality Fracture, 0 errors"
+          status: pass
+      summary: "Replaced draft.png with Aang, the Last Airbender art, updated ATTRIBUTION.md with cross-set sourcing note. Removed 'striped' entry from BACKGROUNDS, leaving only echoverse-reveal. Unit test 6/6 pass. PM personally viewed t025-draft.png: Aang renders clearly, face visible, recognizable."
+      blocked_reason: null
+      spawned_tasks: []
+  - id: T026
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: medium
+    objective: "Audit tranche 11: personally view the exported PNG and confirm Draft shows Aang's art (face visible, recognizable) while still being part of the Reality Fracture set bucket (not a new set entry). Confirm the background picker has exactly one option (Echoverse, no Rayas Azules). Confirm ATTRIBUTION.md clearly discloses the cross-set sourcing for this one image. No regression to tranches 1-10."
+    inputs:
+      - "T025 receipt"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if a new Set entry was accidentally created for this change."
+      - "Reject completion if Rayas Azules is still selectable."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Personally ran grid.test.mjs (6/6 pass) and viewed t025-draft.png: Aang clearly recognizable, face visible. sets.mjs has exactly one entry - no new set created. backgrounds.mjs has exactly one entry (echoverse-reveal) - Rayas Azules fully removed. ATTRIBUTION.md explicitly discloses the cross-set sourcing. draft.png confirmed at original path. No regression."
+      evidence:
+        - "node --test grid.test.mjs: 6/6 pass"
+        - "t025-draft.png viewed by Judge via Read"
+        - "sets.mjs and backgrounds.mjs read in full by Judge"
+        - "ATTRIBUTION.md read: explicit cross-set disclosure"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Set T026 status=done, decision=complete, full_outcome_complete=true."
+        - "Set goal.status=done (tranche 11 complete)."
+        - "PM to commit tranche 11 changes."
+  - id: T027
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: low
+    objective: >
+      Unify all poster text onto the real Beleren2016-Bold font
+      (DISPLAY_FONT_STACK, "MagicLogo") instead of only using it for the
+      title/headers. Now that Beleren2016-Bold is confirmed to have full
+      Spanish glyph coverage (Ñ, ñ, accented vowels, ¿, ¡ - verified in
+      tranche 7), there is no longer a reason to keep date numbers and
+      per-day labels in the separate generic FONT_STACK ("Arial Black").
+      In apps/calendar-generator/src/render.mjs: change the date-number
+      draw (currently `font: \`bold 54px ${FONT_STACK}\`\`) and the label
+      draw (currently `const labelFont = \`bold 34px ${FONT_STACK}\`\`) to
+      use DISPLAY_FONT_STACK instead. FONT_STACK itself can remain defined
+      (as a fallback tail within DISPLAY_FONT_STACK's own font-stack string,
+      which already ends in "Arial Black", system-ui, sans-serif) or be
+      removed if it becomes fully unused - check and clean up accordingly;
+      do not leave a genuinely dead unused constant. Update the file's
+      top-of-file comment describing font usage to reflect that Beleren is
+      now used everywhere, not just title/headers. In
+      apps/calendar-generator/src/app.mjs's loadDisplayFont(), add the two
+      additional size/weight combinations now needed
+      (`document.fonts.load('bold 54px "MagicLogo"')` and
+      `document.fonts.load('bold 34px "MagicLogo"')`) alongside the existing
+      92px/46px loads, so every size actually used is pre-loaded before the
+      first canvas render (canvas text does not wait for webfonts
+      automatically). Re-run the grid unit test (unaffected) and re-verify
+      visually (headless browser) with the full reference assignment set
+      PLUS a custom label containing an accented character (e.g. "Torneo de
+      Año Nuevo", reusing the same test case from tranche 7) that: date
+      numbers and all labels (including the accented one) now render in the
+      Beleren style, with no missing-glyph/tofu boxes and no console/font
+      errors. View your own exported PNG via Read, zoomed into at least one
+      date number and one label, before claiming success.
+    allowed_files:
+      - "apps/calendar-generator/src/render.mjs"
+      - "apps/calendar-generator/src/app.mjs"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "Visual export: date numbers and per-day labels (including one with an accented character) render in the Beleren display font, no missing-glyph boxes, no console/font errors"
+    stop_if:
+      - "Any Spanish character actually fails to render (missing glyph) despite the earlier glyph-coverage check - stop and report rather than ship broken text"
+      - "Verification fails twice after a fix attempt"
+    receipt: null
+  - id: T028
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: medium
+    objective: "Audit the font unification: personally view the exported PNG (zoomed into date numbers and labels, including the accented-character test label) and confirm everything now uses the Beleren display font consistently, with no missing glyphs and no leftover generic-font text anywhere on the poster. No regression to tranches 1-11."
+    inputs:
+      - "T027 receipt"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if any date number or label still visibly uses the old generic font, or if any accented character shows as a missing-glyph box."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt: null
+  - id: T029
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: >
+      Add a per-day event time, with weekday-based defaults the user can
+      override. Default times: Friday 7:00 PM, Saturday 2:00 PM, Sunday
+      11:00 AM. (1) In app.mjs, add a `DEFAULT_TIMES = { friday: '19:00',
+      saturday: '14:00', sunday: '11:00' }` map (24h HH:MM, matching
+      `<input type="time">`'s native value format). (2) In
+      `dayRowTemplate(cell)`, add a `<input type="time" class="day-time"
+      value="${DEFAULT_TIMES[cell.column]}" disabled />` control alongside
+      the existing format `<select>` and label `<input>` - keep it disabled
+      until the day has an assignment, mirroring the existing labelInput
+      disabled/enabled pattern. (3) Extend the `selections` entry shape with
+      an optional `time` field (HH:MM 24h string). When a day transitions
+      from unassigned to assigned (select changes from empty to a format or
+      'custom'), initialize `timeInput.value` to `DEFAULT_TIMES[cell.column]`
+      and set `selections.get(key).time` to that value, then enable the time
+      input. Do NOT reset the time back to default if the user later changes
+      the format while the day stays assigned - only initialize it on the
+      unassigned-to-assigned transition. When a day is cleared back to
+      unassigned, disable and reset the time input same as the label input.
+      Add a 'change' listener on the time input that updates
+      `selections.get(key).time` and calls scheduleRender(). (4) In
+      render.mjs, add an exported pure function `formatTime12h(time24h)`
+      that converts "HH:MM" 24-hour strings to a 12-hour "H:MM AM/PM"
+      display string (e.g. "19:00" -> "7:00 PM", "14:00" -> "2:00 PM",
+      "11:00" -> "11:00 AM", "00:00" -> "12:00 AM", "12:00" -> "12:00 PM").
+      In `buildAssignments(selections, resolvedImages)`, when a selection has
+      a `time` field, compose the final rendered label as `` `${label} •
+      ${formatTime12h(time)}` `` (label, then a middle-dot separator, then
+      the formatted time) instead of just `label` - this composed string is
+      what gets drawn/wrapped on the poster; the separately-stored
+      `selection.label` (shown in the label input) stays untouched. (5) Add
+      a touch of CSS in style.css for the new `.day-time` input so it fits
+      reasonably within the existing `.day-row` layout (your judgment on
+      exact styling, just keep it visually consistent with the existing
+      compact dark-themed controls). (6) Add unit tests for
+      `formatTime12h` in grid.test.mjs (import it from '../render.mjs'),
+      covering at least: "19:00"->"7:00 PM", "14:00"->"2:00 PM",
+      "11:00"->"11:00 AM", "00:00"->"12:00 AM", "12:00"->"12:00 PM",
+      "01:05"->"1:05 AM" (confirms minute zero-padding). (7) Re-run the grid
+      unit test and re-verify visually (headless browser) with the full
+      reference assignment set that: Friday days default to 7:00 PM, Sunday
+      days default to 11:00 AM, times render correctly appended to labels on
+      the poster, and overriding a time (e.g. set Oct16's Duel to "20:30")
+      renders as "8:30 PM" after a page reload/re-assignment. View your own
+      exported PNG via Read, zoomed into at least two cells showing
+      different default times, before claiming success.
+    allowed_files:
+      - "apps/calendar-generator/src/app.mjs"
+      - "apps/calendar-generator/src/render.mjs"
+      - "apps/calendar-generator/src/grid.test.mjs"
+      - "apps/calendar-generator/style.css"
+      - "apps/calendar-generator/README.md"
+    verify:
+      - "node --test apps/calendar-generator/src/grid.test.mjs"
+      - "Visual export: Friday/Saturday/Sunday days show their correct default times appended to labels (7:00 PM / 2:00 PM / 11:00 AM); an overridden time renders correctly"
+      - "No console/page errors"
+    stop_if:
+      - "Verification fails twice after a fix attempt"
+    receipt: null
+  - id: T030
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Audit the per-day time feature: personally view the exported PNG and confirm each populated cell shows the correct time (Friday 7:00 PM, Saturday 2:00 PM, Sunday 11:00 AM by default) appended to its label, legible and not causing awkward wrapping/overflow. Confirm the default-only-on-first-assignment behavior and the override path are correctly implemented by reading app.mjs. Confirm formatTime12h's unit tests pass and cover the edge cases (midnight, noon, zero-padded minutes). No regression to tranches 1-11."
+    inputs:
+      - "T029 receipt"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if default times don't match the spec (Fri 7PM / Sat 2PM / Sun 11AM) or if an override doesn't actually change the rendered output."
+      - "Reject completion if time text causes a cell's label to overflow/clip illegibly."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt: null
 checks:
   dirty_fingerprint: unknown
   last_verification:
